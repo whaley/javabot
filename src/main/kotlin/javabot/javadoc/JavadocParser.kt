@@ -3,7 +3,9 @@ package javabot.javadoc
 import javabot.JavabotThreadFactory
 import javabot.dao.ApiDao
 import javabot.dao.JavadocClassDao
-import org.objectweb.asm.ClassReader
+import org.jboss.forge.roaster.Roaster
+import org.jboss.forge.roaster.model.JavaClass
+import org.jboss.forge.roaster.model.JavaType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
@@ -19,7 +21,7 @@ import javax.inject.Singleton
 
 @Singleton
 class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao: JavadocClassDao,
-                                        val provider: Provider<JavadocClassVisitor>)  {
+                                        val provider: Provider<JavadocClassParser>) {
     lateinit var api: JavadocApi
 
     fun parse(classApi: JavadocApi, location: String, writer: Writer) {
@@ -32,21 +34,28 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
 
             val workQueue = LinkedBlockingQueue<Runnable>()
             val executor = ThreadPoolExecutor(20, 30, 30, TimeUnit.SECONDS, workQueue,
-                  JavabotThreadFactory(false, "javadoc-thread-"))
+                    JavabotThreadFactory(false, "javadoc-thread-"))
             executor.prestartCoreThread()
             val file = File(location)
-            val deleteFile = "JDK" != api.name
+            var deleteFile = false
+            val packages = mutableListOf<String>()
+            if ("JDK" != api.name) {
+                deleteFile = true
+            } else {
+                packages.addAll(arrayOf("java", "javax"))
+            }
             try {
                 JarFile(file).use { jarFile ->
                     val entries = jarFile.entries()
-                    while (entries.hasMoreElements()) {
-                        val entry = entries.nextElement()
-                        if (entry.name.endsWith(".class")) {
-                            if (!workQueue.offer(JavadocClassReader(jarFile, entry), 1, TimeUnit.MINUTES)) {
-                                writer.write("Failed to class to queue: " + entry)
+                    entries.iterator()
+                            .forEach { entry ->
+                                if (entry.name.endsWith(".java")
+                                        && (packages.isEmpty() || packages.firstOrNull { entry.name.startsWith(it + "/") } != null)) {
+                                    if (!workQueue.offer(JavadocClassReader(jarFile, entry), 1, TimeUnit.MINUTES)) {
+                                        writer.write("Failed to class to queue: " + entry)
+                                    }
+                                }
                             }
-                        }
-                    }
                     while (!workQueue.isEmpty()) {
                         writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
                         Thread.sleep(5000)
@@ -70,12 +79,18 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
 
     }
 
+    fun getJavadocClass(api: JavadocApi, fqcn: String): JavadocClass {
+        val pkgName = getPackage(fqcn)
+        val parentName = fqcn.split('.').last()
+        return getJavadocClass(api, pkgName, parentName)
+    }
+
     fun getJavadocClass(api: JavadocApi, pkg: String, name: String): JavadocClass {
         var javadocClass = javadocClassDao.getClass(api, pkg, name)
-            if (javadocClass == null) {
-                javadocClass = JavadocClass(api, pkg, name)
-                javadocClassDao.save(javadocClass)
-            }
+        if (javadocClass == null) {
+            javadocClass = JavadocClass(api, pkg, name)
+            javadocClassDao.save(javadocClass)
+        }
         return javadocClass
     }
 
@@ -83,11 +98,10 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
 
         override fun run() {
             try {
-                val classVisitor = provider.get()
-                if ("JDK" == api.name) {
-                    classVisitor.setPackages("java", "javax")
-                }
-                ClassReader(jarFile.getInputStream(entry)).accept(classVisitor, 0)
+                val source = Roaster.parse(jarFile.getInputStream(entry))
+                val parser = provider.get()
+                val packages = if ("JDK" == api.name) arrayOf("java", "javax") else arrayOf<String>()
+                parser.parse(source, *packages)
             } catch (e: Exception) {
                 throw RuntimeException(e.message, e)
             }
@@ -97,5 +111,9 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
 
     companion object {
         private val log = LoggerFactory.getLogger(JavadocParser::class.java)
+
+        fun getPackage(name: String): String {
+            return name.split('.').dropLast(1).joinToString(".")
+        }
     }
 }

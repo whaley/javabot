@@ -45,7 +45,11 @@ import javax.inject.Inject
         this.baseUrl = baseUrl
         if (name == "JDK") {
             try {
-                this.downloadUrl = File(System.getProperty("java.home"), "lib/rt.jar").toURI().toURL().toString()
+                var property = System.getProperty("java.home")
+                if (property.endsWith("/jre")) {
+                    property = property.dropLast(4)
+                }
+                this.downloadUrl = File(property, "src.zip").toURI().toURL().toString()
             } catch (e: MalformedURLException) {
                 throw IllegalArgumentException(e.message, e)
             }

@@ -132,7 +132,7 @@ open class BaseTest {
             found = found or response.value.contains(target)
         }
         Assert.assertTrue(found, java.lang.String.format("Did not find \n'%s' in \n'%s'", target,
-                messages.map({ it.value }).joinToString { "\n" }))
+                messages.map({ it.value }).joinToString("\n")))
     }
 
     companion object {

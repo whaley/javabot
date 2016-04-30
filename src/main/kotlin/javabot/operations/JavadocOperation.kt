@@ -18,7 +18,7 @@ class JavadocOperation @Inject constructor(bot: Javabot, adminDao: AdminDao, var
 
 
     @field:[Nullable Inject(optional = true)]
-    var client: BitlyClient? = null
+    var bitly: BitlyClient? = null
         get() {
             if (field == null) {
                 field = if (config.bitlyToken() != "") BitlyClient(config.bitlyToken()) else null
@@ -107,14 +107,14 @@ class JavadocOperation @Inject constructor(bot: Javabot, adminDao: AdminDao, var
                 findClasses(api, urls, key)
             } else {
                 val list = dao.getField(api, className, fieldName)
-                urls.addAll(list.map({ field -> field.getDisplayUrl(field.toString(), apiDao, client) }))
+                urls.addAll(list.map({ field -> field.getDisplayUrl(field.toString(), apiDao, bitly) }))
             }
         }
     }
 
     private fun findClasses(api: JavadocApi?, urls: MutableList<String>, key: String) {
         urls.addAll(dao.getClass(api, key).map(
-                { javadocClass -> javadocClass.getDisplayUrl(javadocClass.toString(), apiDao, client) }))
+                { javadocClass -> javadocClass.getDisplayUrl(javadocClass.toString(), apiDao, bitly) }))
     }
 
     private fun parseMethodRequest(urls: MutableList<String>, api: JavadocApi?, key: String, openIndex: Int) {
@@ -134,14 +134,16 @@ class JavadocOperation @Inject constructor(bot: Javabot, adminDao: AdminDao, var
             val list = ArrayList<String>()
 
             //
-            list.addAll(dao.getMethods(api, className, methodName, signatureTypes).map(
-                    { method -> method.getDisplayUrl(method.toString(), apiDao, client) }))
+            list.addAll(dao.getMethods(api, className, methodName, signatureTypes)
+                    .map{ it.getDisplayUrl(it.toString(), apiDao, bitly) }
+            )
             //
 
             if (list.isEmpty()) {
                 className = methodName
-                list.addAll(dao.getMethods(api, className, methodName, signatureTypes).map(
-                        { method -> method.getDisplayUrl(method.toString(), apiDao, client) }))
+                list.addAll(dao.getMethods(api, className, methodName, signatureTypes)
+                        .map { it.getDisplayUrl(it.toString(), apiDao, bitly) }
+                )
             }
 
             urls.addAll(list)

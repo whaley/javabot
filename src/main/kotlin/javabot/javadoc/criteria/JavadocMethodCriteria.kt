@@ -4,6 +4,7 @@ import com.antwerkz.critter.TypeSafeFieldEnd
 import com.antwerkz.critter.criteria.BaseCriteria
 import com.mongodb.WriteConcern
 import com.mongodb.WriteResult
+import javabot.javadoc.JavadocClass
 import javabot.javadoc.JavadocMethod
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
@@ -22,14 +23,14 @@ class JavadocMethodCriteria(ds: Datastore) : BaseCriteria<JavadocMethod>(ds, Jav
               this, query, "id").equal(value)
     }
 
-    fun javadocClassId(): TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, ObjectId> {
+    fun javadocClass(): TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, ObjectId> {
         return TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, org.bson.types.ObjectId>(
               this, query, "javadocClassId")
     }
 
-    fun javadocClassId(value: ObjectId): Criteria {
-        return TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, org.bson.types.ObjectId>(
-              this, query, "javadocClassId").equal(value)
+    fun javadocClass(value: JavadocClass): Criteria {
+        return TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, JavadocClass>(
+              this, query, "javadocClass").equal(value)
     }
 
     fun longSignatureTypes(): TypeSafeFieldEnd<JavadocMethodCriteria, JavadocMethod, String> {

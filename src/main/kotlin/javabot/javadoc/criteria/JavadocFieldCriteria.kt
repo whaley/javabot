@@ -4,6 +4,7 @@ import com.antwerkz.critter.TypeSafeFieldEnd
 import com.antwerkz.critter.criteria.BaseCriteria
 import com.mongodb.WriteConcern
 import com.mongodb.WriteResult
+import javabot.javadoc.JavadocClass
 import javabot.javadoc.JavadocField
 import org.bson.types.ObjectId
 import org.mongodb.morphia.Datastore
@@ -22,14 +23,13 @@ class JavadocFieldCriteria(ds: Datastore) : BaseCriteria<JavadocField>(ds, Javad
               this, query, "id").equal(value)
     }
 
-    fun javadocClassId(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, ObjectId> {
-        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, org.bson.types.ObjectId>(
-              this, query, "javadocClassId")
+    fun javadocClass(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, JavadocClass> {
+        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, JavadocClass>(this, query, "JavadocClass")
     }
 
-    fun javadocClassId(value: ObjectId): Criteria {
-        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, org.bson.types.ObjectId>(
-              this, query, "javadocClassId").equal(value)
+    fun javadocClass(value: JavadocClass): Criteria {
+        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, JavadocClass>(
+              this, query, "javadocClass").equal(value)
     }
 
     fun name(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String> {

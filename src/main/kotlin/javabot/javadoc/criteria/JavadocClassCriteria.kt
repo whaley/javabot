@@ -64,14 +64,14 @@ class JavadocClassCriteria(ds: Datastore) : BaseCriteria<JavadocClass>(ds, Javad
               this, query, "packageName").equal(value)
     }
 
-    fun superClassId(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, ObjectId> {
+    fun parentClass(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, ObjectId> {
         return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, org.bson.types.ObjectId>(
               this, query, "superClassId")
     }
 
-    fun superClassId(value: ObjectId): Criteria {
-        return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, org.bson.types.ObjectId>(
-              this, query, "superClassId").equal(value)
+    fun parentClass(value: JavadocClass): Criteria {
+        return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, JavadocClass>(
+              this, query, "parentClass").equal(value)
     }
 
     fun upperName(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String> {
