@@ -61,8 +61,8 @@ class JavadocTest : BaseTest() {
                 "javax/servlet/http/HttpServletRequest.html#getMethod")
     }
 
-    @Test(dependsOnMethods = arrayOf("servlets"))
-    @Throws(IOException::class) fun javaee() {
+    @Test//(dependsOnMethods = arrayOf("servlets"))
+    fun javaee() {
         val apiName = "JavaEE7"
         dropApi(apiName)
         addApi(apiName, "http://docs.oracle.com/javaee/7/api/",
@@ -70,18 +70,18 @@ class JavadocTest : BaseTest() {
         scanForResponse(operation.handleMessage(message("javadoc Annotated")), "javax/enterprise/inject/spi/Annotated.html")
         scanForResponse(operation.handleMessage(message("javadoc Annotated.getAnnotation(*)")),
                 "javax/enterprise/inject/spi/Annotated.html#getAnnotation")
-        scanForResponse(operation.handleMessage(message("~javadoc ContextService")), "javax/enterprise/concurrent/ContextService.html")
-        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
-                "createContextualProxy(java.lang.Object, java.lang.Class[])")
-        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy(java.lang.Object, java.util.Map, java.lang.Class[])")
-        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
-                "createContextualProxy(T, java.lang.Class)")
-        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy(T, java.util.Map, java.lang.Class)")
-        scanForResponse(operation.handleMessage(message("~javadoc PartitionPlan")), "javax/batch/api/partition/PartitionPlan.html")
-        scanForResponse(operation.handleMessage(message("~javadoc PartitionPlan.setPartitionProperties(Properties[])")),
-              "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties(java.util.Properties[])")
+        scanForResponse(operation.handleMessage(message("javadoc ContextService")), "javax/enterprise/concurrent/ContextService.html")
+        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+                "createContextualProxy-java.lang.Object-java.lang.Class...-")
+        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+              "createContextualProxy-java.lang.Object-java.util.Map-java.lang.Class...-")
+        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+                "createContextualProxy-T-java.lang.Class-")
+        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+              "createContextualProxy-T-java.util.Map-java.lang.Class-")
+        scanForResponse(operation.handleMessage(message("javadoc PartitionPlan")), "javax/batch/api/partition/PartitionPlan.html")
+        scanForResponse(operation.handleMessage(message("javadoc PartitionPlan.setPartitionProperties(Properties[])")),
+              "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties-java.util.Properties[]-")
     }
 
     @Test

@@ -13,7 +13,7 @@ abstract class JavadocElement : Persistent {
 
     var longUrl = ""
 
-    var directUrl: String? = null
+    lateinit var directUrl: String
 
     fun setApi(api: JavadocApi) {
         this.apiId = api.id

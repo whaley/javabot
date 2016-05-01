@@ -7,10 +7,14 @@ import org.jboss.forge.roaster.model.Field
 import org.jboss.forge.roaster.model.FieldHolder
 import org.jboss.forge.roaster.model.GenericCapable
 import org.jboss.forge.roaster.model.InterfaceCapable
+import org.jboss.forge.roaster.model.JavaClass
 import org.jboss.forge.roaster.model.JavaType
 import org.jboss.forge.roaster.model.Method
 import org.jboss.forge.roaster.model.MethodHolder
+import org.jboss.forge.roaster.model.Parameter
+import org.jboss.forge.roaster.model.Type
 import org.jboss.forge.roaster.model.TypeHolder
+import org.jboss.forge.roaster.model.source.JavaSource
 import org.slf4j.LoggerFactory
 import java.util.ArrayList
 import java.util.HashMap
@@ -144,7 +148,7 @@ class JavadocClassParser @Inject constructor(var javadocClassDao: JavadocClassDa
 
             val longTypes = ArrayList<String>()
             val shortTypes = ArrayList<String>()
-            types.forEach { update(longTypes, shortTypes, it.toString()) }
+            types.forEach { update(longTypes, shortTypes, it) }
             val methodName = method.getName()
             entity = JavadocMethod(klass, methodName, types.size, longTypes, shortTypes)
             javadocClassDao.save(entity)
@@ -152,8 +156,25 @@ class JavadocClassParser @Inject constructor(var javadocClassDao: JavadocClassDa
         return entity
     }
 
-    private fun update(longTypes: MutableList<String>, shortTypes: MutableList<String>, arg: String) {
-        longTypes.add(arg)
-        shortTypes.add(calculateNameAndPackage(arg).second)
+    private fun update(longTypes: MutableList<String>, shortTypes: MutableList<String>, arg: Parameter<out JavaType<*>>) {
+        val origin = arg.getOrigin() as JavaSource
+        val imports = origin.getImports()
+        var value:  String
+        if(origin.getImport(arg.getType().getSimpleName()) != null) {
+            value = arg.getType().getQualifiedName();
+        } else {
+            value = if (arg.getType().getQualifiedName().startsWith("java.lang"))
+                arg.getType().getQualifiedName()
+            else
+                arg.getType().getName()
+        }
+        if(arg.isVarArgs()) {
+            value += "..."
+        }
+        if(arg.getType().isArray()) {
+            value += "[]"
+        }
+        longTypes.add(value)
+        shortTypes.add(calculateNameAndPackage(value).second)
     }
 }

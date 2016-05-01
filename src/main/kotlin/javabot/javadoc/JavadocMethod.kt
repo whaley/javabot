@@ -44,15 +44,15 @@ class JavadocMethod : JavadocElement {
 
     private fun buildUrl(parent: JavadocClass, longArgs: List<String>) {
         val parentUrl = parent.directUrl
-        val java8 = parentUrl?.contains("se/8") ?: false
+        val modern = parentUrl.contains("se/8") || parentUrl.contains("ee/7")
         val url = StringBuilder()
         for (arg in longArgs) {
             if (url.length != 0) {
-                url.append(if (java8) "-" else ", ")
+                url.append(if (modern) "-" else ", ")
             }
-            url.append(arg.replace("<.*".toRegex(), ""))
+            url.append(arg.replace("<.*?>".toRegex(), ""))
         }
-        var directUrl = if (java8)
+        var directUrl = if (modern)
             parentUrl + "#" + this.name + "-" + url + "-"
         else
             parentUrl + "#" + this.name + "(" + url + ")"
