@@ -11,7 +11,7 @@ import java.net.MalformedURLException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-@Test//(dependsOnMethods = {"jdk"})
+@Test //(dependsOnMethods = {"jdk"})
 class JavadocOperationTest : BaseTest() {
     @Inject
     protected lateinit var apiDao: ApiDao
@@ -57,8 +57,8 @@ class JavadocOperationTest : BaseTest() {
 
     fun  format() {
         jdk()
-        scanForResponse(operation.handleMessage(message("~javadoc String.format(*)")),
-                "java/lang/String.html#format-java.util.Locale-java.lang.String-java.lang.Object[]")
+        scanForResponse(operation.handleMessage(message("javadoc String.format(*)")),
+                "java/lang/String.html#format-java.util.Locale-java.lang.String-java.lang.Object...")
     }
 
     @Test

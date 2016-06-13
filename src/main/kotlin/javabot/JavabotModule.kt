@@ -77,13 +77,8 @@ open class JavabotModule : AbstractModule() {
     @Singleton
     fun getMongoClient(): MongoClient {
         if (mongoClient == null) {
-            try {
-                mongoClient = MongoClient(ServerAddress(javabotConfig().databaseHost(), javabotConfig().databasePort()),
-                        MongoClientOptions.builder().connectTimeout(2000).build())
-            } catch (e: RuntimeException) {
-                e.printStackTrace()
-                throw RuntimeException(e.message, e)
-            }
+            mongoClient = MongoClient(ServerAddress(javabotConfig().databaseHost(), javabotConfig().databasePort()),
+                MongoClientOptions.builder().connectTimeout(2000).build())
         }
         return mongoClient!!
     }

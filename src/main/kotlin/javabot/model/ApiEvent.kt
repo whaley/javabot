@@ -9,13 +9,23 @@ import org.mongodb.morphia.annotations.Entity
 import org.mongodb.morphia.annotations.Transient
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.StringWriter
 import java.net.MalformedURLException
 import java.net.URL
 import javax.inject.Inject
 
 @Entity("events") class ApiEvent : AdminEvent {
+
+    companion object {
+        fun locateJDK(): String {
+            var property = System.getProperty("java.home")
+            if (property.endsWith("/jre")) {
+                property = property.dropLast(4)
+            }
+            return File(property, "src.zip").toURI().toURL().toString()
+        }
+    }
+
     var apiId: ObjectId? = null
 
     lateinit var name: String
@@ -45,11 +55,7 @@ import javax.inject.Inject
         this.baseUrl = baseUrl
         if (name == "JDK") {
             try {
-                var property = System.getProperty("java.home")
-                if (property.endsWith("/jre")) {
-                    property = property.dropLast(4)
-                }
-                this.downloadUrl = File(property, "src.zip").toURI().toURL().toString()
+                this.downloadUrl = locateJDK()
             } catch (e: MalformedURLException) {
                 throw IllegalArgumentException(e.message, e)
             }
@@ -101,7 +107,7 @@ import javax.inject.Inject
         val user = JavabotUser(requestedBy)
         val admin = adminDao.getAdmin(user)
         if (admin != null) {
-            val file = downloadZip(api.name + ".jar", api.downloadUrl)
+            val file = api.downloadUrl.downloadZip(api.name + ".jar", api.downloadUrl)
             parser.parse(api, file.absolutePath, object : StringWriter() {
                 override fun write(line: String) {
                     bot.privateMessageUser(user, line)
@@ -111,20 +117,19 @@ import javax.inject.Inject
 
     }
 
-    @Throws(IOException::class)
-    private fun downloadZip(fileName: String, zipURL: String): File {
-        val file = File("/tmp/" + fileName)
-        if (!file.exists()) {
-            val fileOutputStream = FileOutputStream(file)
-            val openStream = URL(zipURL).openStream()
-            fileOutputStream.write(openStream.readBytes())
-            fileOutputStream.close()
-            openStream.close()
-        }
-        return file
-    }
-
     override fun toString(): String {
         return "ApiEvent{name='${name}', state=${state}, completed=${completed}, type=${type}}"
     }
+
+}
+
+fun String.downloadZip(file: File): File {
+    if (!file.exists()) {
+        val fileOutputStream = FileOutputStream(file)
+        val openStream = URL(this).openStream()
+        fileOutputStream.write(openStream.readBytes())
+        fileOutputStream.close()
+        openStream.close()
+    }
+    return file
 }

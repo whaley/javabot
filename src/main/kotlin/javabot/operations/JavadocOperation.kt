@@ -10,6 +10,8 @@ import javabot.dao.ApiDao
 import javabot.dao.JavadocClassDao
 import javabot.javadoc.JavadocApi
 import net.swisstech.bitly.BitlyClient
+import org.zeroturnaround.exec.ProcessExecutor
+import java.io.File
 import java.util.ArrayList
 import javax.annotation.Nullable
 

@@ -18,6 +18,14 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-evanchooly-maven</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/evanchooly/maven</url>
+        </repository>
     </repositories>
 
     <build>
@@ -173,10 +181,23 @@
             <artifactId>critter-core</artifactId>
             <version>${critter.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.antwerkz.gridfs-fs-provider</groupId>
+            <artifactId>gridfs-core</artifactId>
+            <version>0.2-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>com.antwerkz.sofia</groupId>
             <artifactId>sofia-core</artifactId>
             <version>${sofia.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.zeroturnaround</groupId>
+            <artifactId>zt-exec</artifactId>
+            <version>1.9</version>
         </dependency>
 
         <dependency>
@@ -427,8 +448,8 @@
         <sofia.version>0.15</sofia.version>
         <slf4j.version>1.7.4</slf4j.version>
         <dropwizard.version>0.7.1</dropwizard.version>
-        <kotlin.version>1.0.3</kotlin.version>
-        <roaster.version>2.18.6.Final</roaster.version>
+        <kotlin.version>1.0.2</kotlin.version>
+        <roaster.version>2.18.8-SNAPSHOT</roaster.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
