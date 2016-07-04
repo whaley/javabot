@@ -449,7 +449,7 @@
         <slf4j.version>1.7.4</slf4j.version>
         <dropwizard.version>0.7.1</dropwizard.version>
         <kotlin.version>1.0.2</kotlin.version>
-        <roaster.version>2.18.8-SNAPSHOT</roaster.version>
+        <roaster.version>2.19.0.Final</roaster.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
