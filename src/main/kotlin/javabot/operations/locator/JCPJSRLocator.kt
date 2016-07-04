@@ -12,33 +12,25 @@ class JCPJSRLocator {
 
     fun locate(inputs: Map<String, String>): Map<String, String> {
         val retVal = HashMap<String, String>()
-        val urlString = "http://www.jcp.org/en/jsr/detail?id=" + inputs["jsr"]
+        val urlString = "http://www.jcp.org/en/jsr/detail?id=${inputs["jsr"]}"
         retVal.put("url", urlString)
         try {
-            HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build().use { client ->
-                val httpget = HttpGet(urlString)
-                val response = client.execute(httpget)
-                val entity = response.entity
-                if (entity != null) {
-                    try {
-                        val data = EntityUtils.toString(entity)
-                        val doc = Jsoup.parse(data)
-                        val title = doc.select("div.header1").first()
-                        val titleText = StringBuilder()
-                        var separator = ""
-                        // we build the content,
-                        // because of that stupid <sup> thing the JCP uses
-                        for (element in title.textNodes()) {
-                            titleText.append(separator).append(element.text().trim())
-                            separator = " "
+            HttpClientBuilder.create()
+                    .setDefaultRequestConfig(requestConfig).build()
+                    .use { client ->
+                        client.execute(HttpGet(urlString))
+                                .entity?.let { entity ->
+                            try {
+                                retVal.put("title", Jsoup.parse(EntityUtils.toString(entity))
+                                        .select("div.header1")
+                                        .first().textNodes()
+                                        .map { it.text().trim() }
+                                        .joinToString(" "))
+                            } finally {
+                                EntityUtils.consume(entity)
+                            }
                         }
-                        retVal.put("title", titleText.toString())
-                    } finally {
-                        EntityUtils.consume(entity)
                     }
-                }
-
-            }
         } catch (ignored: Exception) {
         }
 

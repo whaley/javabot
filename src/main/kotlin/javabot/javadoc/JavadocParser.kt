@@ -7,7 +7,6 @@ import javabot.dao.JavadocClassDao
 import org.bson.types.ObjectId
 import org.jboss.forge.roaster.Roaster
 import org.slf4j.LoggerFactory
-import org.zeroturnaround.exec.ProcessExecutor
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -26,7 +25,6 @@ import java.util.jar.JarFile
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
-import javax.tools.DocumentationTool
 import javax.tools.ToolProvider
 
 @Singleton
@@ -63,21 +61,16 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                     }
                                 }
                             }
-                }
-                while (!workQueue.isEmpty()) {
-                    writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
-                    Thread.sleep(5000)
+                    while (!workQueue.isEmpty()) {
+                        writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
+                        Thread.sleep(5000)
+                    }
                 }
                 buildHtml(api, location, packages)
                 executor.shutdown()
                 executor.awaitTermination(1, TimeUnit.HOURS)
             } finally {
-/*
-                if (deleteFile) {
-                    location.delete()
-                }
-*/
-//                target?.deleteRecursively()
+                location.delete()
             }
             writer.write("Finished importing %s.  %s!".format(api.name, if (workQueue.isEmpty()) "SUCCESS" else "FAILURE"))
         } catch (e: IOException) {
@@ -120,7 +113,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val javadocDir = File(tmp, "javadoc" + ObjectId())
         try {
             extractJar(jar, jarTarget, packages)
-            ToolProvider.getSystemDocumentationTool().run(null, PrintStream(ByteArrayOutputStream()), PrintStream(ByteArrayOutputStream()),
+            val printStream = PrintStream(ByteArrayOutputStream())
+            ToolProvider.getSystemDocumentationTool().run(null, printStream, printStream,
                     "-d", javadocDir.absolutePath,
                     "-subpackages", packages.joinToString(":"),
                     "-protected",

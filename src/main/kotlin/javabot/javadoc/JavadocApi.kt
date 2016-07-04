@@ -31,7 +31,8 @@ class JavadocApi : Persistent {
 
     constructor(apiName: String, url: String, downloadUrl: String) {
         name = apiName
-        baseUrl = if (url.endsWith("/")) url else url + "/"
+        baseUrl = if (url.endsWith("/")) url else url
+        baseUrl = "$baseUrl$apiName/"
         this.downloadUrl = downloadUrl
     }
 

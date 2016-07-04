@@ -1,5 +1,7 @@
 package javabot.model
 
+import com.google.inject.Provider
+import javabot.JavabotConfig
 import javabot.dao.AdminDao
 import javabot.dao.ApiDao
 import javabot.javadoc.JavadocApi
@@ -30,9 +32,15 @@ import javax.inject.Inject
 
     lateinit var name: String
 
-    lateinit var baseUrl: String
-
     lateinit var downloadUrl: String
+
+    @Inject
+    @Transient
+    lateinit var ircBot: Provider<PircBotX>
+
+    @Inject
+    @Transient
+    lateinit var config: JavabotConfig
 
     @Inject
     @Transient
@@ -46,13 +54,12 @@ import javax.inject.Inject
     @Transient
     lateinit var adminDao: AdminDao
 
-    protected constructor() {
+    constructor() {
     }
 
-    constructor(requestedBy: String, name: String, baseUrl: String, downloadUrl: String) : super(requestedBy, EventType.ADD) {
+    constructor(requestedBy: String, name: String, downloadUrl: String) : super(requestedBy, EventType.ADD) {
         this.requestedBy = requestedBy
         this.name = name
-        this.baseUrl = baseUrl
         if (name == "JDK") {
             try {
                 this.downloadUrl = locateJDK()
@@ -88,7 +95,7 @@ import javax.inject.Inject
     }
 
     override fun add() {
-        val api = JavadocApi(name, baseUrl, downloadUrl)
+        val api = JavadocApi(name, config.url() + "/javadoc/", downloadUrl)
         apiDao.save(api)
         process(api)
     }

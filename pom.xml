@@ -183,9 +183,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.antwerkz.gridfs-fs-provider</groupId>
-            <artifactId>gridfs-core</artifactId>
-            <version>0.2-SNAPSHOT</version>
+            <groupId>com.antwerkz.gridfs</groupId>
+            <artifactId>gridfs-fs-provider</artifactId>
+            <version>0.2</version>
         </dependency>
 
         <dependency>

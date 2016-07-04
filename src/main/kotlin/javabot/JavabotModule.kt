@@ -33,7 +33,12 @@ open class JavabotModule : AbstractModule() {
 
     private var config: JavabotConfig? = null
 
-    private var datastore: Datastore? = null
+    private val datastore: Datastore by lazy {
+        val ds = getMorphia().createDatastore(getMongoClient(), javabotConfig().databaseName())
+        ds.ensureIndexes()
+        ds
+    }
+    private var botListenerProvider: Provider<BotListener>? = null
 
     lateinit var ircAdapterProvider: Provider<out IrcAdapter>
     lateinit var channelDaoProvider: Provider<ChannelDao>
@@ -50,15 +55,7 @@ open class JavabotModule : AbstractModule() {
     @Provides
     @Singleton
     fun datastore(): Datastore {
-        if (datastore == null) {
-            datastore = getMorphia().createDatastore(getMongoClient(), javabotConfig().databaseName())
-            try {
-                datastore!!.ensureIndexes()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return datastore!!
+        return datastore
     }
 
     @Provides
@@ -66,8 +63,8 @@ open class JavabotModule : AbstractModule() {
     fun getMorphia(): Morphia {
         if (morphia == null) {
             morphia = Morphia()
-            morphia!!.mapPackage(JavadocClass::class.java.`package`.name)
-            morphia!!.mapPackage(Factoid::class.java.`package`.name)
+            morphia!!.mapPackageFromClass(JavadocClass::class.java)
+            morphia!!.mapPackageFromClass(Factoid::class.java)
             morphia!!.mapper.converters.addConverter(LocalDateTimeConverter::class.java)
         }
         return morphia!!

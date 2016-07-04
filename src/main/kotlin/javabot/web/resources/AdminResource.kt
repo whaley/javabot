@@ -44,7 +44,7 @@ constructor(var viewFactory: ViewFactory, var adminDao: AdminDao, var apiDao: Ap
     @GET
     @Path("/javadoc")
     fun javadoc(@Context request: HttpServletRequest, @Restricted(Authority.ROLE_ADMIN) user: User): View {
-        return viewFactory.createJavadocView(request)
+        return viewFactory.createJavadocAdminView(request)
     }
 
     @GET
@@ -144,7 +144,7 @@ constructor(var viewFactory: ViewFactory, var adminDao: AdminDao, var apiDao: Ap
     @Path("/addApi") fun addApi(@Context request: HttpServletRequest, @Restricted(Authority.ROLE_ADMIN) user: User,
                                 @FormParam("name") name: String, @FormParam("baseUrl") baseUrl: String,
                                 @FormParam("downloadUrl") downloadUrl: String): View {
-        apiDao.save(ApiEvent(user.email!!, name, baseUrl, downloadUrl))
+        apiDao.save(ApiEvent(user.email!!, name, downloadUrl))
         return index(request, user)
     }
 

@@ -9,7 +9,7 @@ import javabot.dao.FactoidDao
 import javabot.javadoc.JavadocApi
 import javax.servlet.http.HttpServletRequest
 
-class JavadocView @Inject constructor(
+class JavadocAdminView @Inject constructor(
         adminDao: AdminDao,
         channelDao: ChannelDao,
         factoidDao: FactoidDao,

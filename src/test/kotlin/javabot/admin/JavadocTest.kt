@@ -3,6 +3,7 @@ package javabot.admin
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
 import javabot.BaseTest
+import javabot.JavabotConfig
 import javabot.dao.ApiDao
 import javabot.dao.JavadocClassDao
 import javabot.javadoc.JavadocApi
@@ -28,14 +29,16 @@ class JavadocTest : BaseTest() {
     private lateinit var javadocClassDao: JavadocClassDao
 
     @Inject
+    private lateinit var config: JavabotConfig
+
+    @Inject
     private lateinit var operation: JavadocOperation
     
     @Test
     fun servlets() {
         val apiName = "Servlet"
         dropApi(apiName)
-        addApi(apiName, "http://tomcat.apache.org/tomcat-7.0-doc/servletapi/",
-              "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1-sources.jar")
+        addApi(apiName, "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1-sources.jar")
         checkServlets(apiName)
     }
 
@@ -65,23 +68,22 @@ class JavadocTest : BaseTest() {
     fun javaee() {
         val apiName = "JavaEE7"
         dropApi(apiName)
-        addApi(apiName, "http://docs.oracle.com/javaee/7/api/",
-                "https://repo1.maven.org/maven2/javax/javaee-api/7.0/javaee-api-7.0-sources.jar")
+        addApi(apiName, "https://repo1.maven.org/maven2/javax/javaee-api/7.0/javaee-api-7.0-sources.jar")
         scanForResponse(operation.handleMessage(message("javadoc Annotated")), "javax/enterprise/inject/spi/Annotated.html")
         scanForResponse(operation.handleMessage(message("javadoc Annotated.getAnnotation(*)")),
                 "javax/enterprise/inject/spi/Annotated.html#getAnnotation")
         scanForResponse(operation.handleMessage(message("javadoc ContextService")), "javax/enterprise/concurrent/ContextService.html")
         scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-                "createContextualProxy-java.lang.Object-java.lang.Class...-")
+                "createContextualProxy(java.lang.Object, java.lang.Class...)")
         scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy-java.lang.Object-java.util.Map-java.lang.Class...-")
+              "createContextualProxy(java.lang.Object, java.util.Map-java.lang.Class...)")
         scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-                "createContextualProxy-T-java.lang.Class-")
+                "createContextualProxy(T, java.lang.Class)")
         scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy-T-java.util.Map-java.lang.Class-")
+              "createContextualProxy(T-java.util.Map, java.lang.Class)")
         scanForResponse(operation.handleMessage(message("javadoc PartitionPlan")), "javax/batch/api/partition/PartitionPlan.html")
         scanForResponse(operation.handleMessage(message("javadoc PartitionPlan.setPartitionProperties(Properties[])")),
-              "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties-java.util.Properties[]-")
+              "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties(java.util.Properties[])")
     }
 
     @Test
@@ -94,8 +96,8 @@ class JavadocTest : BaseTest() {
         }
         var api: JavadocApi? = apiDao.find("JDK")
         if (api == null) {
-            val event = ApiEvent(testUser.nick, "JDK", "http://docs.oracle.com/javase/8/docs/api",
-                  File(System.getProperty("java.home"), "src.zip").toURI().toURL().toString())
+            val event = ApiEvent(testUser.nick, "JDK",
+                    File(System.getProperty("java.home"), "src.zip").toURI().toURL().toString())
             eventDao.save(event)
             waitForEvent(event, "adding JDK", Duration(30, TimeUnit.MINUTES))
             messages.clear()
@@ -104,11 +106,11 @@ class JavadocTest : BaseTest() {
         Assert.assertNotNull(javadocClassDao.getClass(api, "java.lang", "Integer"),
                 "Should find an entry for ${api?.name}'s java.lang.Integer")
         scanForResponse(operation.handleMessage(message("javadoc String.chars()")),
-              "http://docs.oracle.com/javase/8/docs/api/java/lang/CharSequence.html#chars--")
+              "${config.url()}/javadoc/JDK/java/lang/CharSequence.html#chars()")
     }
 
-    private fun addApi(apiName: String, apiUrlString: String, downloadUrlString: String) {
-        val event = ApiEvent(testUser.nick, apiName, apiUrlString, downloadUrlString)
+    private fun addApi(apiName: String, downloadUrlString: String) {
+        val event = ApiEvent(testUser.nick, apiName, downloadUrlString)
         eventDao.save(event)
         waitForEvent(event, "adding ${apiName}", Duration(5, TimeUnit.MINUTES))
         LOG.debug("done waiting for event to finish")

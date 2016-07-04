@@ -9,13 +9,18 @@ import io.dropwizard.assets.AssetsBundle
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.dropwizard.views.ViewBundle
+import javabot.JavabotConfig
 import javabot.JavabotModule
+import javabot.dao.ApiDao
 import javabot.web.auth.RestrictedProvider
 import javabot.web.resources.AdminResource
 import javabot.web.resources.BotResource
 import javabot.web.resources.PublicOAuthResource
 import org.eclipse.jetty.server.session.SessionHandler
 import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.EnumSet
 import javax.servlet.DispatcherType
 import javax.servlet.Filter
@@ -25,6 +30,7 @@ import javax.servlet.ServletException
 import javax.servlet.ServletRequest
 import javax.servlet.ServletResponse
 import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 @Singleton
 class JavabotApplication @Inject constructor(var injector: Injector): Application<JavabotConfiguration>() {
@@ -58,12 +64,47 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
         environment.jersey().register(RuntimeExceptionMapper(configuration))
         environment.jersey().register(RestrictedProvider())
 
-        environment.servlets().addFilter("html", HtmlToResourceFilter()).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java),
-              false, "*.html")
+        environment.servlets()
+                .addFilter("html", HtmlToResourceFilter())
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), false, "*.html")
+        environment.servlets()
+                .addFilter("javadoc", injector.getInstance(JavadocFilter::class.java))
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), false, "/javadoc/*")
 
         environment.healthChecks().register("javabot", JavabotHealthCheck())
 
         running = true
+    }
+
+    private class JavadocFilter @Inject constructor(var apiDao: ApiDao, var config: JavabotConfig) : Filter {
+        val gridfs: String by lazy {
+            "gridfs://${config.databaseHost()}:${config.databasePort()}/${config.databaseName()}.javadoc"
+        }
+
+        override fun destroy() {
+        }
+
+        override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
+            request as HttpServletRequest
+            var filePath = request.requestURI.split("/").drop(2).joinToString("/")
+            if(!filePath.startsWith("/")) {
+                filePath = "/" + filePath
+            }
+            val path = Paths.get(URI("$gridfs$filePath"));
+
+            if (Files.exists(path)) {
+                response.outputStream.use { stream ->
+                    Files.copy(path, stream)
+                    stream.flush()
+                }
+            } else {
+                (response as HttpServletResponse).sendError(404)
+            }
+            chain.doFilter(request, response);
+        }
+
+        override fun init(filterConfig: FilterConfig?) {
+        }
     }
 
     private class HtmlToResourceFilter : Filter {

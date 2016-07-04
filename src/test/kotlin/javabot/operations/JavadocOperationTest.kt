@@ -26,7 +26,7 @@ class JavadocOperationTest : BaseTest() {
     fun jdk() {
         val api = apiDao.find("JDK")
         if (api == null) {
-            val event = ApiEvent(testUser.nick, "JDK", "http://docs.oracle.com/javase/8/docs/api", "")
+            val event = ApiEvent(testUser.nick, "JDK", "")
             eventDao.save(event)
             waitForEvent(event, "adding JDK", Duration(30, TimeUnit.MINUTES))
         }
@@ -35,8 +35,8 @@ class JavadocOperationTest : BaseTest() {
 
     fun constructors() {
         jdk()
-        scanForResponse(operation.handleMessage(message("~javadoc java.lang.String(char[])")), "java/lang/String.html")
-        scanForResponse(operation.handleMessage(message("~javadoc String(char[])")), "java/lang/String.html#String-char[]-")
+        scanForResponse(operation.handleMessage(message("javadoc java.lang.String(char[])")), "java/lang/String.html")
+        scanForResponse(operation.handleMessage(message("javadoc String(char[])")), "java/lang/String.html#String(char[])")
     }
 
     fun methods() {
@@ -58,7 +58,7 @@ class JavadocOperationTest : BaseTest() {
     fun  format() {
         jdk()
         scanForResponse(operation.handleMessage(message("javadoc String.format(*)")),
-                "java/lang/String.html#format-java.util.Locale-java.lang.String-java.lang.Object...")
+                "java/lang/String.html#format-java.util.Locale-java.lang.String(java.lang.Object...")
     }
 
     @Test
