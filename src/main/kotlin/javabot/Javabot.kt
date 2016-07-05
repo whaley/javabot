@@ -6,7 +6,6 @@ import com.google.inject.Injector
 import com.google.inject.Singleton
 import com.jayway.awaitility.Awaitility
 import javabot.commands.AdminCommand
-import javabot.dao.AdminDao
 import javabot.dao.ChannelDao
 import javabot.dao.ConfigDao
 import javabot.dao.EventDao
@@ -74,6 +73,10 @@ constructor(private var injector: Injector, private var configDao: ConfigDao, pr
 
     val executors = ThreadPoolExecutor(5, 10, 5L, TimeUnit.MINUTES, ArrayBlockingQueue(50),
             JavabotThreadFactory(true, "javabot-handler-thread-"))
+
+    private val operationsList by lazy {
+        configDao.list(BotOperation::class.java)
+    }
 
     private val eventHandler = Executors.newScheduledThreadPool(2, JavabotThreadFactory(true, "javabot-event-handler"))
 
@@ -318,8 +321,7 @@ constructor(private var injector: Injector, private var configDao: ConfigDao, pr
             try {
                 responses.addAll(next.handleMessage(message))
             } catch (e: Exception) {
-                LOG.error("NPE: message = [$message], requester = [${message.user}]")
-                e.printStackTrace()
+                LOG.error("NPE: message = [$message], requester = [${message.user}]", e)
             }
 
         }

@@ -173,6 +173,27 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <phase>process-test-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -424,24 +445,6 @@
         <!-- Unit testing dependencies -->
     </dependencies>
 
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>cobertura-maven-plugin</artifactId>
-                <version>2.5.2</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.16</version>
-                <configuration>
-                    <linkXRef>false</linkXRef>
-                </configuration>
-            </plugin>
-        </plugins>
-    </reporting>
-
     <properties>
         <critter.version>2.1.1</critter.version>
         <guice.version>4.0</guice.version>
@@ -450,6 +453,7 @@
         <dropwizard.version>0.7.1</dropwizard.version>
         <kotlin.version>1.0.2</kotlin.version>
         <roaster.version>2.19.0.Final</roaster.version>
+        <jacoco.version>0.7.7.201606060606</jacoco.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
