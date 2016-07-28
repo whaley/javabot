@@ -9,10 +9,13 @@ import io.dropwizard.assets.AssetsBundle
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.dropwizard.views.ViewBundle
+import javabot.IrcAdapter
 import javabot.Javabot
 import javabot.JavabotConfig
 import javabot.JavabotModule
+import javabot.OfflineAdapter
 import javabot.dao.ApiDao
+import javabot.dao.NickServDao
 import javabot.web.auth.RestrictedProvider
 import javabot.web.resources.AdminResource
 import javabot.web.resources.BotResource
@@ -40,7 +43,7 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            Guice.createInjector(JavabotModule())
+            Guice.createInjector(JavabotWebModule())
                     .getInstance(JavabotApplication::class.java)
                     .run(arrayOf("server", "javabot.yml"))
         }
@@ -125,4 +128,11 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
         override fun destroy() {
         }
     }
+}
+
+class JavabotWebModule: JavabotModule() {
+    override fun configure() {
+           super.configure()
+           bind(IrcAdapter::class.java).to(OfflineAdapter::class.java)
+       }
 }

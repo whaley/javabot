@@ -13,8 +13,8 @@ class JavadocAdminView @Inject constructor(
         adminDao: AdminDao,
         channelDao: ChannelDao,
         factoidDao: FactoidDao,
-        var apiDao: ApiDao, @Assisted request: HttpServletRequest) :
-        MainView(adminDao, channelDao, factoidDao, request) {
+        apiDao: ApiDao, @Assisted request: HttpServletRequest) :
+        MainView(adminDao, channelDao, factoidDao, apiDao, request) {
 
     override fun getChildView(): String {
         return "admin/javadoc.ftl"

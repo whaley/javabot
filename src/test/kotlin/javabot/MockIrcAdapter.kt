@@ -18,6 +18,19 @@ constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, 
             javabot: Provider<Javabot>, configDao: ConfigDao, ircBot: Provider<PircBotX>) :
         OfflineAdapter(nickServDao, logsDao, channelDao, adminDao, javabot, configDao, ircBot) {
 
+    override
+    fun startBot() {
+    }
+
+    override
+    fun isConnected(): Boolean {
+        return true
+    }
+
+    override fun isBotOnChannel(name: String): Boolean {
+        return true
+    }
+
     override fun log(value: String) {
         messages.add(value)
     }

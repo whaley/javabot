@@ -198,7 +198,6 @@ constructor(private var injector: Injector, private var configDao: ConfigDao, pr
         set.forEach({ it.execute() })
     }
 
-    @SuppressWarnings("unchecked")
     fun getAllOperations(): SortedMap<String, BotOperation> {
         for (op in configDao.list(BotOperation::class.java)) {
             allOperationsMap.put(op.getName(), op)

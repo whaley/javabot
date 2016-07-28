@@ -60,7 +60,7 @@ class ApiEvent : AdminEvent {
     super(requestedBy, EventType.ADD) {
         this.requestedBy = requestedBy
         this.name = name
-        this.groupId = groupId.replace(".", "/")
+        this.groupId = groupId
         this.artifactId = artifactId
         this.version = version
     }
@@ -90,8 +90,8 @@ class ApiEvent : AdminEvent {
 
     override fun add() {
         val api = JavadocApi(name, "${config.url()}", groupId, artifactId, version)
-        process(api)
         apiDao.save(api)
+        process(api)
     }
 
     override fun reload() {
@@ -103,8 +103,8 @@ class ApiEvent : AdminEvent {
             version = if (name == "JDK" ) System.getProperty("java.version") else  api.version
             apiDao.delete(apiId)
             api.id = ObjectId()
-            process(api)
             apiDao.save(api)
+            process(api)
         }
     }
 
@@ -122,7 +122,7 @@ class ApiEvent : AdminEvent {
     }
 
     private fun buildMavenUrl(): String {
-        return "https://repo1.maven.org/maven2/${groupId}/${artifactId}/${version}/${artifactId}-${version}-sources.jar"
+        return "https://repo1.maven.org/maven2/${groupId.replace(".", "/")}/${artifactId}/${version}/${artifactId}-${version}-sources.jar"
     }
 
     override fun toString(): String {

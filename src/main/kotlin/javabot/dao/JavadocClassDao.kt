@@ -15,7 +15,7 @@ import java.util.ArrayList
 
 class JavadocClassDao @Inject constructor(ds: Datastore)  : BaseDao<JavadocClass>(ds, JavadocClass::class.java) {
 
-    @SuppressWarnings("unchecked") fun getClass(api: JavadocApi?, name: String): List<JavadocClass> {
+    fun getClass(api: JavadocApi?, name: String): List<JavadocClass> {
         val strings = JavadocClassParser.calculateNameAndPackage(name)
         val pkgName = strings.first
         val criteria = JavadocClassCriteria(ds)
@@ -27,7 +27,7 @@ class JavadocClassDao @Inject constructor(ds: Datastore)  : BaseDao<JavadocClass
         return criteria.query().asList()
     }
 
-    @SuppressWarnings("unchecked") fun getClass(api: JavadocApi?, pkg: String, name: String): JavadocClass? {
+    fun getClass(api: JavadocApi?, pkg: String, name: String): JavadocClass? {
         val criteria: JavadocClassCriteria
         try {
             criteria = JavadocClassCriteria(ds)
@@ -37,15 +37,13 @@ class JavadocClassDao @Inject constructor(ds: Datastore)  : BaseDao<JavadocClass
             criteria.upperPackageName().equal(pkg.toUpperCase())
             criteria.upperName().equal(name.toUpperCase())
         } catch (e: NullPointerException) {
-            LOG.debug("pkg = " + pkg)
-            LOG.debug("name = " + name)
             throw e
         }
 
         return criteria.query().get()
     }
 
-    @SuppressWarnings("unchecked") fun getField(api: JavadocApi?, className: String, fieldName: String): List<JavadocField> {
+    fun getField(api: JavadocApi?, className: String, fieldName: String): List<JavadocField> {
         val criteria = JavadocFieldCriteria(ds)
         val classes = getClass(api, className)
         if (!classes.isEmpty()) {
@@ -57,7 +55,7 @@ class JavadocClassDao @Inject constructor(ds: Datastore)  : BaseDao<JavadocClass
         return emptyList()
     }
 
-    @SuppressWarnings("unchecked") fun getMethods(api: JavadocApi?, className: String, methodName: String,
+    fun getMethods(api: JavadocApi?, className: String, methodName: String,
                                                   signatureTypes: String): List<JavadocMethod> {
         val classes = getClass(api, className)
         val list = ArrayList(classes)

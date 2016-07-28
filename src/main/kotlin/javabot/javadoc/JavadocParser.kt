@@ -43,13 +43,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             val executor = ThreadPoolExecutor(20, 30, 30, TimeUnit.SECONDS, workQueue,
                     JavabotThreadFactory(false, "javadoc-thread-"))
             executor.prestartCoreThread()
-            var packages = mutableListOf<String>()
-            if ("JDK" == api.name) {
-                packages = mutableListOf("java", "javax")
-            }
-            packages = packages
-                    .map { it.replace('.', '/') + "/" }
-                    .toMutableList()
+            val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf("com", "net", "org")
+
             try {
                 JarFile(location).use { jarFile ->
                     Collections.list(jarFile.entries())
@@ -114,15 +109,19 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         jarTarget.mkdirs()
         javadocDir.mkdirs()
 
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val printStream = PrintStream(byteArrayOutputStream)
         try {
             extractJar(jar, jarTarget, packages)
-            val printStream = PrintStream(ByteArrayOutputStream())
             ToolProvider.getSystemDocumentationTool().run(null, printStream, printStream,
                     "-d", javadocDir.absolutePath,
                     "-subpackages", packages.joinToString(":"),
                     "-protected",
                     "-use",
                     "-sourcepath", jarTarget.absolutePath);
+        } catch (e : Exception) {
+            log.error(e.message, e)
+            log.error(byteArrayOutputStream.toString("UTF-8"))
         } finally {
             jarTarget.deleteRecursively()
         }

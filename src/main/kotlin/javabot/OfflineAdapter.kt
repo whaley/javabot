@@ -20,34 +20,12 @@ constructor(nickServDao: NickServDao, logsDao: LogsDao, channelDao: ChannelDao, 
     companion object {
         val LOG = LoggerFactory.getLogger("offline")
     }
-    override
-    fun startBot() {
-    }
-
-    override
-    fun isConnected(): Boolean {
-        return true
-    }
-
-    override fun isBotOnChannel(name: String): Boolean {
-        return true
-    }
-
-    override fun send(user: JavabotUser, value: String) {
-        log(value)
-    }
-
-    override
-    fun send(channel: Channel, value: String) {
-        log(value)
-    }
 
     override fun action(channel: Channel, message: String) {
         throw UnsupportedOperationException("action")
     }
 
-    override
-    fun joinChannel(channel: Channel) {
+    override fun joinChannel(channel: Channel) {
         throw UnsupportedOperationException("joinChannel")
     }
 
@@ -57,6 +35,15 @@ constructor(nickServDao: NickServDao, logsDao: LogsDao, channelDao: ChannelDao, 
 
     override fun isOnCommonChannel(user: JavabotUser): Boolean {
         throw UnsupportedOperationException("isOnCommonChannel")
+    }
+
+    override fun send(user: JavabotUser, value: String) {
+        log(value)
+    }
+
+    override
+    fun send(channel: Channel, value: String) {
+        log(value)
     }
 
     override fun message(target: String, message: String) {

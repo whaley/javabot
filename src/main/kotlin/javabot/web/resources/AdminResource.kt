@@ -163,13 +163,18 @@ class AdminResource @Inject constructor(var viewFactory: ViewFactory, var adminD
     @Path("/addApi")
     fun addApi(@Context request: HttpServletRequest, @Restricted(Authority.ROLE_ADMIN) user: User,
                @FormParam("name") name: String, @FormParam("dependency") depString: String): View {
-        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(InputSource(StringReader(depString)))
 
-        val dependency = (document.getElementsByTagName("dependency").item(0) as Element)
-        val groupId = dependency.getElementsByTagName("groupId").item(0).textContent
-        val artifactId = dependency.getElementsByTagName("artifactId").item(0).textContent
-        val version = dependency.getElementsByTagName("version").item(0).textContent
-        apiDao.save(ApiEvent(user.email, name, groupId, artifactId, version))
+        val event = if (depString != "") {
+            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(InputSource(StringReader(depString)))
+
+            val dependency = (document.getElementsByTagName("dependency").item(0) as Element)
+            val groupId = dependency.getElementsByTagName("groupId").item(0).textContent
+            val artifactId = dependency.getElementsByTagName("artifactId").item(0).textContent
+            val version = dependency.getElementsByTagName("version").item(0).textContent
+            ApiEvent(user.email, if (name != "") name else artifactId, groupId, artifactId, version)
+        } else ApiEvent(user.email, name, "", "", "")
+
+        apiDao.save(event)
         return javadoc(request, user)
     }
 

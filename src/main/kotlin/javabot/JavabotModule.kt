@@ -116,7 +116,6 @@ open class JavabotModule : AbstractModule() {
 
     protected open fun loadConfigProperties(): HashMap<Any, Any> = HashMap()
 
-    @SuppressWarnings("unchecked")
     protected fun validate(config: JavabotConfig): JavabotConfig {
         val configClass = config.javaClass.interfaces[0] as Class<JavabotConfig>
         val methods = configClass.declaredMethods
