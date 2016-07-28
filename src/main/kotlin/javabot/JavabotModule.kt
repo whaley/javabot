@@ -38,8 +38,6 @@ open class JavabotModule : AbstractModule() {
         ds.ensureIndexes()
         ds
     }
-    private var botListenerProvider: Provider<BotListener>? = null
-
     lateinit var ircAdapterProvider: Provider<out IrcAdapter>
     lateinit var channelDaoProvider: Provider<ChannelDao>
     lateinit var configDaoProvider: Provider<ConfigDao>

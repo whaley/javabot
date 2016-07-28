@@ -6,7 +6,6 @@ import javabot.IrcAdapter
 import javabot.MockIrcUser
 import javabot.dao.FactoidDao
 import javabot.dao.LogsDaoTest
-import org.pircbotx.PircBotX
 import org.pircbotx.hooks.events.PrivateMessageEvent
 import org.testng.Assert
 import org.testng.annotations.BeforeMethod
@@ -17,7 +16,6 @@ import javax.inject.Provider
 
 @Test(groups = arrayOf("operations"))
 class AddFactoidOperationTest @Inject constructor(val factoidDao: FactoidDao, val listener: IrcAdapter,
-                                                  private val ircBot: Provider<PircBotX>,
                                                   val addFactoidOperation: AddFactoidOperation,
                                                   val getFactoidOperation: GetFactoidOperation,
                                                   val forgetFactoidOperation: ForgetFactoidOperation): BaseTest() {
@@ -97,8 +95,7 @@ class AddFactoidOperationTest @Inject constructor(val factoidDao: FactoidDao, va
     }
 
     fun privMessage() {
-        listener.onPrivateMessage(PrivateMessageEvent(ircBot.get(), MockIrcUser(targetUser), System.currentTimeMillis().toString()
-                + " is doh!"))
+        listener.onPrivateMessage(PrivateMessageEvent(ircBot.get(), MockIrcUser(targetUser), "${System.currentTimeMillis()} is doh!"))
         Assert.assertEquals(messages.get()[0], Sofia.privmsgChange())
     }
 }

@@ -104,24 +104,14 @@ class JavadocClassCriteria(ds: Datastore) : BaseCriteria<JavadocClass>(ds, Javad
               this, query, "apiId").equal(value)
     }
 
-    fun directUrl(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String> {
+    fun url(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String> {
         return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String>(
-              this, query, "directUrl")
+              this, query, "url")
     }
 
-    fun directUrl(value: String): Criteria {
+    fun url(value: String): Criteria {
         return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String>(
-              this, query, "directUrl").equal(value)
-    }
-
-    fun longUrl(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String> {
-        return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String>(
-              this, query, "longUrl")
-    }
-
-    fun longUrl(value: String): Criteria {
-        return TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String>(
-              this, query, "longUrl").equal(value)
+              this, query, "url").equal(value)
     }
 
     fun shortUrl(): TypeSafeFieldEnd<JavadocClassCriteria, JavadocClass, String> {
@@ -328,23 +318,13 @@ class JavadocClassCriteria(ds: Datastore) : BaseCriteria<JavadocClass>(ds, Javad
             return this
         }
 
-        fun directUrl(value: String): JavadocClassUpdater {
-            updateOperations.set("directUrl", value)
+        fun url(value: String): JavadocClassUpdater {
+            updateOperations.set("url", value)
             return this
         }
 
-        fun unsetDirectUrl(): JavadocClassUpdater {
-            updateOperations.unset("directUrl")
-            return this
-        }
-
-        fun longUrl(value: String): JavadocClassUpdater {
-            updateOperations.set("longUrl", value)
-            return this
-        }
-
-        fun unsetLongUrl(): JavadocClassUpdater {
-            updateOperations.unset("longUrl")
+        fun unsetUrl(): JavadocClassUpdater {
+            updateOperations.unset("url")
             return this
         }
 

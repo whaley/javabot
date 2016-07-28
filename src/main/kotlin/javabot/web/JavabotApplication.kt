@@ -9,6 +9,7 @@ import io.dropwizard.assets.AssetsBundle
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.dropwizard.views.ViewBundle
+import javabot.Javabot
 import javabot.JavabotConfig
 import javabot.JavabotModule
 import javabot.dao.ApiDao
@@ -37,10 +38,11 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
     var running = false
 
     companion object {
-
-        @Throws(Exception::class)
-        @JvmStatic fun main(args: Array<String>) {
-            Guice.createInjector(JavabotModule()).getInstance(JavabotApplication::class.java).run(arrayOf("server", "javabot.yml"))
+        @JvmStatic
+        fun main(args: Array<String>) {
+            Guice.createInjector(JavabotModule())
+                    .getInstance(JavabotApplication::class.java)
+                    .run(arrayOf("server", "javabot.yml"))
         }
     }
 
@@ -50,10 +52,12 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
         bootstrap.addBundle(AssetsBundle("/META-INF/resources/webjars", "/webjars", null, "webjars"))
     }
 
-    @Throws(Exception::class)
     override fun run(configuration: JavabotConfiguration, environment: Environment) {
         environment.applicationContext.isSessionsEnabled = true
         environment.applicationContext.sessionHandler = SessionHandler()
+
+        val bot = injector.getInstance(Javabot::class.java)
+        bot.setUpThreads()
 
         val oauth = injector.getInstance(PublicOAuthResource::class.java)
         oauth.configuration = configuration
@@ -64,6 +68,7 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
         environment.jersey().register(RuntimeExceptionMapper(configuration))
         environment.jersey().register(RestrictedProvider())
 
+        environment.servlets().setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true")
         environment.servlets()
                 .addFilter("html", HtmlToResourceFilter())
                 .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), false, "*.html")
@@ -109,19 +114,15 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
 
     private class HtmlToResourceFilter : Filter {
 
-        @Throws(ServletException::class)
         override fun init(filterConfig: FilterConfig) {
-
         }
 
-        @Throws(IOException::class, ServletException::class)
         override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
             val replace = (request as HttpServletRequest).requestURI.replace(".html", "")
             request.getRequestDispatcher(replace).forward(request, response)
         }
+
         override fun destroy() {
-
         }
-
     }
 }

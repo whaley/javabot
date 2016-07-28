@@ -14,13 +14,14 @@ import java.io.IOException
 import java.io.PrintStream
 import java.io.Writer
 import java.net.URI
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.util.Collections
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import javax.inject.Inject
 import javax.inject.Provider
@@ -51,20 +52,18 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                     .toMutableList()
             try {
                 JarFile(location).use { jarFile ->
-                    val entries = jarFile.entries()
-                    entries.iterator()
-                            .forEach { entry ->
-                                if (entry.name.endsWith(".java")
-                                        && (packages.isEmpty() || packages.any { entry.name.startsWith(it) })) {
-                                    if (!workQueue.offer(JavadocClassReader(api, jarFile, entry), 1, TimeUnit.MINUTES)) {
-                                        writer.write("Failed to class to queue: " + entry)
-                                    }
+                    Collections.list(jarFile.entries())
+                            .filter { it.name.endsWith(".java") && (packages.isEmpty() || packages.any { pkg -> it.name.startsWith(pkg) }) }
+                            .map { jarFile.getInputStream(it).readBytes().toString(Charset.forName("UTF-8")) }
+                            .forEach { text ->
+                                if (!workQueue.offer(JavadocClassReader(api, text), 1, TimeUnit.MINUTES)) {
+                                    writer.write("Failed to queue class")
                                 }
                             }
-                    while (!workQueue.isEmpty()) {
-                        writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
-                        Thread.sleep(5000)
-                    }
+                }
+                while (!workQueue.isEmpty()) {
+                    writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
+                    Thread.sleep(5000)
                 }
                 buildHtml(api, location, packages)
                 executor.shutdown()
@@ -87,7 +86,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val host = config.databaseHost()
         val port = config.databasePort()
         val database = config.databaseName()
-        val uri = URI("gridfs://$host:$port/$database/javadoc/${api.name}")
+        val uri = URI("gridfs://$host:$port/$database.javadoc/${api.name}")
         val targetDir = Paths.get(uri)
         val javadocDir = buildJavadocHtml(packages, file)
         val javadocPath = javadocDir.toPath()
@@ -111,6 +110,10 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         }
         val jarTarget = File(tmp, ObjectId().toString())
         val javadocDir = File(tmp, "javadoc" + ObjectId())
+
+        jarTarget.mkdirs()
+        javadocDir.mkdirs()
+
         try {
             extractJar(jar, jarTarget, packages)
             val printStream = PrintStream(ByteArrayOutputStream())
@@ -127,7 +130,6 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
     }
 
     private fun extractJar(jar: File, jarTarget: File, packages: List<String>) {
-        jarTarget.mkdirs()
         val jarFile = JarFile(jar)
         jarFile.entries().iterator().forEach { entry ->
             if (entry.name.endsWith(".java") && (packages.isEmpty() || packages.any { entry.name.startsWith(it) })) {
@@ -155,12 +157,11 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         return javadocClass
     }
 
-    private inner class JavadocClassReader(private val api: JavadocApi, private val jarFile: JarFile,
-                                           private val entry: JarEntry) : Runnable {
+    private inner class JavadocClassReader(private val api: JavadocApi, val text: String) : Runnable {
 
         override fun run() {
             try {
-                val source = Roaster.parse(jarFile.getInputStream(entry))
+                val source = Roaster.parse(text)
                 val parser = provider.get()
                 val packages = if ("JDK" == api.name) arrayOf("java", "javax") else arrayOf<String>()
                 parser.parse(api, source, *packages)

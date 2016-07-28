@@ -20,24 +20,15 @@ class JavadocParserTest : BaseTest() {
     lateinit var config: JavabotConfig
 
     @Test
-    fun testParse() {
-        val downloadUrl = ApiEvent.locateJDK()
-        val file = downloadUrl.downloadZip(File("/tmp/JDK.jar"))
-        parser.parse(JavadocApi("JDK", config.url() + "/javadoc/", downloadUrl), file, OutputStreamWriter(System.out, "UTF-8"))
-    }
-
-    @Test
     fun testBuildHtml() {
         val downloadUrl = ApiEvent.locateJDK()
         val file = downloadUrl.downloadZip(File("/tmp/JDK.jar"))
-        parser.buildHtml(JavadocApi("JDK", config.url() + "/javadoc/", downloadUrl), file, mutableListOf("java", "javax"))
+        parser.buildHtml(JavadocApi("JDK", "${config.url()}/javadoc/JDK", "", "", ""), file, listOf("java", "javax"))
         val host = config.databaseHost()
         val port = config.databasePort()
         val database = config.databaseName()
 
         val uri = URI("gridfs://$host:$port/$database.javadoc/JDK/java/applet/Applet.html")
-        val applet = Paths.get(uri)
-        Assert.assertTrue(Files.exists(applet))
+        Assert.assertTrue(Files.exists(Paths.get(uri)))
     }
-
 }

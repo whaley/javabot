@@ -1,9 +1,7 @@
 package javabot.javadoc
 
-import org.bson.types.ObjectId
 import org.mongodb.morphia.annotations.Entity
 import org.mongodb.morphia.annotations.Field
-import org.mongodb.morphia.annotations.Id
 import org.mongodb.morphia.annotations.Index
 import org.mongodb.morphia.annotations.Indexes
 import org.mongodb.morphia.annotations.PrePersist
@@ -11,10 +9,8 @@ import org.mongodb.morphia.annotations.Reference
 
 @Entity(value = "fields", noClassnameStored = true)
 @Indexes(Index(fields = arrayOf(Field("javadocClass"), Field("upperName") )),
-      Index(fields = arrayOf(Field("apiId"), Field("javadocClass"), Field("upperName") ))) class JavadocField : JavadocElement {
-    @Id
-    var id: ObjectId = ObjectId()
-
+      Index(fields = arrayOf(Field("apiId"), Field("javadocClass"), Field("upperName") )))
+class JavadocField : JavadocElement {
     @Reference(lazy = true, idOnly = true)
     lateinit var javadocClass: JavadocClass
     lateinit var name: String
@@ -31,9 +27,7 @@ import org.mongodb.morphia.annotations.Reference
         name = fieldName
         type = fieldType
         apiId = parent.apiId
-        val url = parent.directUrl + "#" + name
-        longUrl = url
-        directUrl = url
+        url = "${parent.url}#$name"
         parentClassName = parent.toString()
     }
 

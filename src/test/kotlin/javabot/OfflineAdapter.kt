@@ -1,7 +1,6 @@
 package javabot
 
 import com.google.inject.Inject
-import com.google.inject.Singleton
 import javabot.dao.AdminDao
 import javabot.dao.ChannelDao
 import javabot.dao.ConfigDao
@@ -10,18 +9,17 @@ import javabot.dao.NickServDao
 import javabot.model.Channel
 import javabot.model.JavabotUser
 import org.pircbotx.PircBotX
+import org.slf4j.LoggerFactory
 import javax.inject.Provider
 
-@Singleton
-class MockIrcAdapter @Inject
-constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, channelDao: ChannelDao, adminDao: AdminDao,
+open class OfflineAdapter @Inject
+constructor(nickServDao: NickServDao, logsDao: LogsDao, channelDao: ChannelDao, adminDao: AdminDao,
             javabot: Provider<Javabot>, configDao: ConfigDao, ircBot: Provider<PircBotX>) :
-        OfflineAdapter(nickServDao, logsDao, channelDao, adminDao, javabot, configDao, ircBot) {
+        IrcAdapter(nickServDao, logsDao, channelDao, adminDao, javabot, configDao, ircBot) {
 
-    override fun log(value: String) {
-        messages.add(value)
+    companion object {
+        val LOG = LoggerFactory.getLogger("offline")
     }
-
     override
     fun startBot() {
     }
@@ -36,12 +34,12 @@ constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, 
     }
 
     override fun send(user: JavabotUser, value: String) {
-        messages.add(value)
+        log(value)
     }
 
     override
     fun send(channel: Channel, value: String) {
-        messages.add(value)
+        log(value)
     }
 
     override fun action(channel: Channel, message: String) {
@@ -50,9 +48,11 @@ constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, 
 
     override
     fun joinChannel(channel: Channel) {
+        throw UnsupportedOperationException("joinChannel")
     }
 
     override fun leave(channel: Channel, user: JavabotUser) {
+        throw UnsupportedOperationException("leave")
     }
 
     override fun isOnCommonChannel(user: JavabotUser): Boolean {
@@ -60,6 +60,10 @@ constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, 
     }
 
     override fun message(target: String, message: String) {
-        messages.add(message)
+        log(message)
+    }
+
+    open protected fun log(value: String) {
+        LOG.info(value)
     }
 }

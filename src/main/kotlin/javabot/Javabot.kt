@@ -6,6 +6,7 @@ import com.google.inject.Injector
 import com.google.inject.Singleton
 import com.jayway.awaitility.Awaitility
 import javabot.commands.AdminCommand
+import javabot.dao.AdminDao
 import javabot.dao.ChannelDao
 import javabot.dao.ConfigDao
 import javabot.dao.EventDao
@@ -42,7 +43,7 @@ import javax.inject.Provider
 open class Javabot @Inject
 constructor(private var injector: Injector, private var configDao: ConfigDao, private var channelDao: ChannelDao,
             private var logsDao: LogsDao, private var shunDao: ShunDao, private var eventDao: EventDao,
-            private var throttler: Throttler, private var adapter: IrcAdapter, private var adminDao: AdminDao,
+            private var throttler: Throttler, private var adapter: IrcAdapter, protected var adminDao: AdminDao,
             private var javabotConfig: JavabotConfig, private var application: Provider<JavabotApplication>) {
 
     companion object {
@@ -100,7 +101,7 @@ constructor(private var injector: Injector, private var configDao: ConfigDao, pr
         startWebApp()
     }
 
-    private fun setUpThreads() {
+    fun setUpThreads() {
         eventHandler.scheduleAtFixedRate({ this.processAdminEvents() }, 5, 5, TimeUnit.SECONDS)
         eventHandler.scheduleAtFixedRate({ this.joinChannels() }, 5, 5, TimeUnit.SECONDS)
     }

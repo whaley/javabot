@@ -28,15 +28,24 @@ class AdminDao @Inject constructor(ds: Datastore, var configDao: ConfigDao) : Ba
 
     fun getAdmin(user: JavabotUser): Admin? {
         val adminCriteria = AdminCriteria(ds)
-        adminCriteria.ircName(user.nick)
+        adminCriteria.or(
+                adminCriteria.ircName(user.nick),
+                adminCriteria.emailAddress(user.userName)
+        )
         return adminCriteria.query().get()
     }
 
-    fun getAdminByEmailAddress(email: String): Admin {
+    fun getAdminByEmailAddress(email: String): Admin? {
         val criteria = AdminCriteria(ds)
         criteria.emailAddress(email)
 
-        return criteria.query().get() ?: throw RuntimeException(Sofia.unknownUser())
+        var admin = criteria.query().get()
+        if (admin == null && ds.createQuery(Admin::class.java).count() == 0) {
+            admin = Admin(email)
+            admin.botOwner = true
+            save(admin)
+        }
+        return admin
     }
 
     fun create(ircName: String, userName: String, hostName: String): Admin {

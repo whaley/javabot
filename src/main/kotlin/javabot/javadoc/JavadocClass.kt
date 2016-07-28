@@ -4,7 +4,6 @@ import org.bson.types.ObjectId
 import org.mongodb.morphia.annotations.Embedded
 import org.mongodb.morphia.annotations.Entity
 import org.mongodb.morphia.annotations.Field
-import org.mongodb.morphia.annotations.Id
 import org.mongodb.morphia.annotations.Index
 import org.mongodb.morphia.annotations.Indexes
 import org.mongodb.morphia.annotations.PrePersist
@@ -15,9 +14,6 @@ import org.mongodb.morphia.annotations.Reference
       Index(fields = arrayOf(Field("upperPackageName"), Field("upperName") )),
       Index(fields = arrayOf(Field("apiId"), Field("upperPackageName"), Field("upperName") )))
 open class JavadocClass : JavadocElement {
-    @Id
-    lateinit var id: ObjectId
-
     lateinit var packageName: String
     lateinit var name: String
     @Reference(lazy = true, idOnly = true)
@@ -32,7 +28,7 @@ open class JavadocClass : JavadocElement {
     var isEnum = false
     var isInterface = false
     var isAnnotation = false
-    @Embedded()
+    @Embedded
     var typeVariables = mutableListOf<JavadocType>()
 
     lateinit var upperPackageName: String
@@ -42,12 +38,10 @@ open class JavadocClass : JavadocElement {
     }
 
     constructor(api: JavadocApi, pkg: String, name: String) {
-        id = ObjectId()
         packageName = pkg
         this.name = name
         apiId = api.id
-        directUrl = api.baseUrl + pkg.replace('.', '/') + "/" + name + ".html"
-        longUrl = api.baseUrl + "index.html?" + pkg.replace('.', '/') + "/" + name + ".html"
+        url = api.baseUrl + "index.html?" + pkg.replace('.', '/') + "/" + name + ".html"
     }
 
     @PrePersist

@@ -82,24 +82,14 @@ class JavadocFieldCriteria(ds: Datastore) : BaseCriteria<JavadocField>(ds, Javad
               this, query, "apiId").equal(value)
     }
 
-    fun directUrl(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String> {
+    fun url(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String> {
         return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String>(
-              this, query, "directUrl")
+              this, query, "url")
     }
 
-    fun directUrl(value: String): Criteria {
+    fun url(value: String): Criteria {
         return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String>(
-              this, query, "directUrl").equal(value)
-    }
-
-    fun longUrl(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String> {
-        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String>(
-              this, query, "longUrl")
-    }
-
-    fun longUrl(value: String): Criteria {
-        return TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String>(
-              this, query, "longUrl").equal(value)
+              this, query, "url").equal(value)
     }
 
     fun shortUrl(): TypeSafeFieldEnd<JavadocFieldCriteria, JavadocField, String> {
@@ -211,23 +201,13 @@ class JavadocFieldCriteria(ds: Datastore) : BaseCriteria<JavadocField>(ds, Javad
             return this
         }
 
-        fun directUrl(value: String): JavadocFieldUpdater {
-            updateOperations.set("directUrl", value)
+        fun url(value: String): JavadocFieldUpdater {
+            updateOperations.set("url", value)
             return this
         }
 
-        fun unsetDirectUrl(): JavadocFieldUpdater {
-            updateOperations.unset("directUrl")
-            return this
-        }
-
-        fun longUrl(value: String): JavadocFieldUpdater {
-            updateOperations.set("longUrl", value)
-            return this
-        }
-
-        fun unsetLongUrl(): JavadocFieldUpdater {
-            updateOperations.unset("longUrl")
+        fun unsetUrl(): JavadocFieldUpdater {
+            updateOperations.unset("url")
             return this
         }
 

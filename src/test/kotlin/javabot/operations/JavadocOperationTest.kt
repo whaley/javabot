@@ -26,7 +26,7 @@ class JavadocOperationTest : BaseTest() {
     fun jdk() {
         val api = apiDao.find("JDK")
         if (api == null) {
-            val event = ApiEvent(testUser.nick, "JDK", "")
+            val event = ApiEvent(testUser.nick, "JDK", "", "", "")
             eventDao.save(event)
             waitForEvent(event, "adding JDK", Duration(30, TimeUnit.MINUTES))
         }
@@ -35,19 +35,19 @@ class JavadocOperationTest : BaseTest() {
 
     fun constructors() {
         jdk()
-        scanForResponse(operation.handleMessage(message("javadoc java.lang.String(char[])")), "java/lang/String.html")
-        scanForResponse(operation.handleMessage(message("javadoc String(char[])")), "java/lang/String.html#String(char[])")
+        scanForResponse(operation.handleMessage(message("~javadoc java.lang.String(char[])")), "java/lang/String.html")
+        scanForResponse(operation.handleMessage(message("~javadoc String(char[])")), "java/lang/String.html#String(char[])")
     }
 
     fun methods() {
         jdk()
-        scanForResponse(operation.handleMessage(message("~javadoc String.split(String)")), "java/lang/String.html#split-java.lang.String-")
+        scanForResponse(operation.handleMessage(message("~javadoc String.split(String)")), "java/lang/String.html#split(java.lang.String)")
         scanForResponse(operation.handleMessage(message("~javadoc -jdk String.split(String)")),
-                "java/lang/String.html#split-java.lang.String-")
+                "java/lang/String.html#split(java.lang.String)")
         scanForResponse(operation.handleMessage(message("~javadoc String.split(java.lang.String)")),
-                "java/lang/String.html#split-java.lang.String-")
-        scanForResponse(operation.handleMessage(message("~javadoc String.join(*)")), "java/lang/String.html#join-")
-        scanForResponse(operation.handleMessage(message("~javadoc String.split(*)")), "java/lang/String.html#split-java.lang.String-")
+                "java/lang/String.html#split(java.lang.String)")
+        scanForResponse(operation.handleMessage(message("~javadoc String.join(*)")), "java/lang/String.html#join(")
+        scanForResponse(operation.handleMessage(message("~javadoc String.split(*)")), "java/lang/String.html#split(java.lang.String)")
     }
 
     fun nestedClasses() {
@@ -57,8 +57,8 @@ class JavadocOperationTest : BaseTest() {
 
     fun  format() {
         jdk()
-        scanForResponse(operation.handleMessage(message("javadoc String.format(*)")),
-                "java/lang/String.html#format-java.util.Locale-java.lang.String(java.lang.Object...")
+        scanForResponse(operation.handleMessage(message("~javadoc String.format(*)")),
+                "java/lang/String.html#format(java.util.Locale, java.lang.String, java.lang.Object...)")
     }
 
     @Test
@@ -77,6 +77,6 @@ class JavadocOperationTest : BaseTest() {
     fun inherited() {
         jdk()
         scanForResponse(operation.handleMessage(message("~javadoc ArrayList.listIterator(*)")),
-                "java/util/ArrayList.html#listIterator-int-")
+                "java/util/ArrayList.html#listIterator(int)")
     }
 }

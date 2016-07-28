@@ -13,8 +13,6 @@ import org.mongodb.morphia.annotations.Reference
 @Indexes(Index(fields = arrayOf(Field("apiId"))), Index(fields = arrayOf(Field("javadocClass"), Field("upperName") )),
       Index(fields = arrayOf(Field("apiId"), Field("javadocClass"), Field("upperName") )))
 class JavadocMethod : JavadocElement {
-    @Id
-    var id: ObjectId? = null
     @Reference(lazy = true, idOnly = true)
     lateinit var javadocClass: JavadocClass
     lateinit var name: String
@@ -43,7 +41,7 @@ class JavadocMethod : JavadocElement {
     }
 
     private fun buildUrl(parent: JavadocClass, longArgs: List<String>) {
-        val parentUrl = parent.directUrl
+        val parentUrl = parent.url
         val modern = parentUrl.contains("se/8") || parentUrl.contains("ee/7")
         val url = StringBuilder()
         for (arg in longArgs) {
@@ -57,22 +55,15 @@ class JavadocMethod : JavadocElement {
         else
             parentUrl + "#" + this.name + "(" + url + ")"
 
-        longUrl = directUrl
-        this.directUrl = directUrl
+        this.url = directUrl
     }
-
-/*
-    public fun setJavadocClassId(javadocClass: JavadocClass) {
-        this.javadocClassId = javadocClass.id
-        parentClassName = javadocClass.toString()
-    }
-*/
 
     fun getShortSignature(): String {
         return "$name($shortSignatureTypes)"
     }
 
-    @PrePersist fun uppers() {
+    @PrePersist
+    fun uppers() {
         upperName = name.toUpperCase()
     }
 

@@ -57,7 +57,7 @@ class JavadocOperation @Inject constructor(bot: Javabot, adminDao: AdminDao, var
         if (!urls.isEmpty()) {
 
             val nick = event.user.nick
-            var urlMessage = StringBuilder(nick + ": ")
+            val urlMessage = StringBuilder(nick + ": ")
             val entries = buildResponse(event, urls, urlMessage)
             if (urls.size > RESULT_LIMIT) {
                 responses.add(Message(event, Sofia.tooManyResults(nick)))

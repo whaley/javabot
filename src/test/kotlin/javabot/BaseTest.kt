@@ -1,6 +1,7 @@
 package javabot
 
 import com.jayway.awaitility.Awaitility
+
 import com.jayway.awaitility.Duration
 import javabot.dao.AdminDao
 import javabot.dao.ChangeDao
@@ -29,6 +30,13 @@ import javax.inject.Provider
 
 @Guice(modules = arrayOf(JavabotTestModule::class))
 open class BaseTest {
+
+    companion object {
+        val TEST_TARGET_NICK: String = "jbtestuser"
+        val TEST_USER_NICK: String = "botuser"
+        val TEST_BOT_NICK: String = "testjavabot"
+        val BOT_EMAIL: String = "test@example.com"
+    }
 
     var done: EnumSet<State> = EnumSet.of(State.COMPLETED, State.FAILED)
 
@@ -67,11 +75,7 @@ open class BaseTest {
     @BeforeTest
     fun setup() {
         messages.clear()
-        val admin = try {
-            adminDao.getAdminByEmailAddress(BOT_EMAIL)
-        } catch(adminNotFound: RuntimeException) {
-            Admin(testUser.nick, BOT_EMAIL, testUser.hostmask, true)
-        }
+        val admin = adminDao.getAdminByEmailAddress(BOT_EMAIL) ?: Admin(testUser.nick, BOT_EMAIL, testUser.hostmask, true)
         admin.ircName = testUser.nick
         admin.emailAddress = BOT_EMAIL
         admin.hostName = testUser.hostmask
@@ -133,13 +137,6 @@ open class BaseTest {
         }
         Assert.assertTrue(found, java.lang.String.format("Did not find \n'%s' in \n'%s'", target,
                 messages.map({ it.value }).joinToString("\n")))
-    }
-
-    companion object {
-        val TEST_TARGET_NICK: String = "jbtestuser"
-        val TEST_USER_NICK: String = "botuser"
-        val TEST_BOT_NICK: String = "testjavabot"
-        val BOT_EMAIL: String = "test@example.com"
     }
 }
 

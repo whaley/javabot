@@ -8,9 +8,7 @@ class JavadocType {
     lateinit var name: String
     var bounds = mutableListOf<String>()
 
-    constructor() {
-
-    }
+    constructor() { }
 
     constructor(type: TypeVariable<*>): this() {
         name = type.getName()
@@ -22,6 +20,4 @@ class JavadocType {
     override fun toString(): String{
         return "JavadocType(name='$name', bounds=$bounds)"
     }
-
-
 }

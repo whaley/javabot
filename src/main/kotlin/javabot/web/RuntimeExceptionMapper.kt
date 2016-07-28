@@ -17,23 +17,22 @@ import javax.ws.rs.core.Response.Status.UNAUTHORIZED
 import javax.ws.rs.ext.ExceptionMapper
 import javax.ws.rs.ext.Provider
 
-@Provider class RuntimeExceptionMapper(configuration: JavabotConfiguration) : ExceptionMapper<RuntimeException> {
+@Provider
+class RuntimeExceptionMapper(val configuration: JavabotConfiguration) : ExceptionMapper<RuntimeException> {
+
+    companion object {
+        private val LOG = LoggerFactory.getLogger(RuntimeExceptionMapper::class.java)
+    }
 
     @Context
     private val httpContext: HttpContext? = null
-
-    private val configuration: JavabotConfiguration
-
-    init {
-        this.configuration = configuration
-    }
 
     override fun toResponse(runtime: RuntimeException): Response {
 
         if (runtime is WebApplicationException) {
             return handleWebApplicationException(runtime)
         } else {
-            log.error(runtime.message, runtime)
+            LOG.error(runtime.message, runtime)
             return Response.status(INTERNAL_SERVER_ERROR).entity(PublicErrorResource().view500()).build()
         }
     }
@@ -58,14 +57,9 @@ import javax.ws.rs.ext.Provider
 
             //                       .entity(new PublicErrorResource().view404())
         } else {
-            log.error(exception.message, exception)
+            LOG.error(exception.message, exception)
             return Response.status(INTERNAL_SERVER_ERROR).entity(PublicErrorResource().view500()).build()
         }
-    }
-
-    companion object {
-
-        private val log = LoggerFactory.getLogger(RuntimeExceptionMapper::class.java)
     }
 
 }

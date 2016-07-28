@@ -14,8 +14,6 @@ import org.slf4j.LoggerFactory
 import org.testng.Assert
 import org.testng.annotations.Test
 import java.io.File
-import java.io.IOException
-import java.net.MalformedURLException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -33,12 +31,12 @@ class JavadocTest : BaseTest() {
 
     @Inject
     private lateinit var operation: JavadocOperation
-    
+
     @Test
     fun servlets() {
         val apiName = "Servlet"
         dropApi(apiName)
-        addApi(apiName, "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1-sources.jar")
+        addApi(apiName, "javax/servlet", "javax.servlet-api", "3.0.1")
         checkServlets(apiName)
     }
 
@@ -57,33 +55,33 @@ class JavadocTest : BaseTest() {
         Assert.assertNotNull(javadocClassDao.getClass(api, "javax.servlet.http", "HttpServletRequest"),
                 "Should find an entry for ${apiName}/javax.servlet.http.HttpServletRequest")
 
-        scanForResponse(operation.handleMessage(message("javadoc HttpServlet")), "javax/servlet/http/HttpServlet.html")
-        scanForResponse(operation.handleMessage(message("javadoc HttpServlet.doGet(*)")), "javax/servlet/http/HttpServlet.html#doGet")
-        scanForResponse(operation.handleMessage(message("javadoc HttpServletRequest")), "javax/servlet/http/HttpServletRequest.html")
-        scanForResponse(operation.handleMessage(message("javadoc HttpServletRequest.getMethod()")),
+        scanForResponse(operation.handleMessage(message("~javadoc HttpServlet")), "javax/servlet/http/HttpServlet.html")
+        scanForResponse(operation.handleMessage(message("~javadoc HttpServlet.doGet(*)")), "javax/servlet/http/HttpServlet.html#doGet")
+        scanForResponse(operation.handleMessage(message("~javadoc HttpServletRequest")), "javax/servlet/http/HttpServletRequest.html")
+        scanForResponse(operation.handleMessage(message("~javadoc HttpServletRequest.getMethod()")),
                 "javax/servlet/http/HttpServletRequest.html#getMethod")
     }
 
-    @Test//(dependsOnMethods = arrayOf("servlets"))
+    @Test //(dependsOnMethods = arrayOf("servlets"))
     fun javaee() {
         val apiName = "JavaEE7"
         dropApi(apiName)
-        addApi(apiName, "https://repo1.maven.org/maven2/javax/javaee-api/7.0/javaee-api-7.0-sources.jar")
-        scanForResponse(operation.handleMessage(message("javadoc Annotated")), "javax/enterprise/inject/spi/Annotated.html")
-        scanForResponse(operation.handleMessage(message("javadoc Annotated.getAnnotation(*)")),
+        addApi(apiName, "javax", "javaee-api", "7.0")
+        scanForResponse(operation.handleMessage(message("~javadoc Annotated")), "javax/enterprise/inject/spi/Annotated.html")
+        scanForResponse(operation.handleMessage(message("~javadoc Annotated.getAnnotation(*)")),
                 "javax/enterprise/inject/spi/Annotated.html#getAnnotation")
-        scanForResponse(operation.handleMessage(message("javadoc ContextService")), "javax/enterprise/concurrent/ContextService.html")
-        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+        scanForResponse(operation.handleMessage(message("~javadoc ContextService")), "javax/enterprise/concurrent/ContextService.html")
+        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
                 "createContextualProxy(java.lang.Object, java.lang.Class...)")
-        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy(java.lang.Object, java.util.Map-java.lang.Class...)")
-        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
+        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
+                "createContextualProxy(java.lang.Object, java.util.Map, java.lang.Class...)")
+        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
                 "createContextualProxy(T, java.lang.Class)")
-        scanForResponse(operation.handleMessage(message("javadoc ContextService.createContextualProxy(*)")),
-              "createContextualProxy(T-java.util.Map, java.lang.Class)")
-        scanForResponse(operation.handleMessage(message("javadoc PartitionPlan")), "javax/batch/api/partition/PartitionPlan.html")
-        scanForResponse(operation.handleMessage(message("javadoc PartitionPlan.setPartitionProperties(Properties[])")),
-              "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties(java.util.Properties[])")
+        scanForResponse(operation.handleMessage(message("~javadoc ContextService.createContextualProxy(*)")),
+                "createContextualProxy(T, java.util.Map, java.lang.Class)")
+        scanForResponse(operation.handleMessage(message("~javadoc PartitionPlan")), "javax/batch/api/partition/PartitionPlan.html")
+        scanForResponse(operation.handleMessage(message("~javadoc PartitionPlan.setPartitionProperties(Properties[])")),
+                "javax/batch/api/partition/PartitionPlan.html#setPartitionProperties(java.util.Properties[])")
     }
 
     @Test
@@ -96,8 +94,7 @@ class JavadocTest : BaseTest() {
         }
         var api: JavadocApi? = apiDao.find("JDK")
         if (api == null) {
-            val event = ApiEvent(testUser.nick, "JDK",
-                    File(System.getProperty("java.home"), "src.zip").toURI().toURL().toString())
+            val event = ApiEvent(testUser.nick, "JDK", "", "", "")
             eventDao.save(event)
             waitForEvent(event, "adding JDK", Duration(30, TimeUnit.MINUTES))
             messages.clear()
@@ -105,12 +102,12 @@ class JavadocTest : BaseTest() {
         }
         Assert.assertNotNull(javadocClassDao.getClass(api, "java.lang", "Integer"),
                 "Should find an entry for ${api?.name}'s java.lang.Integer")
-        scanForResponse(operation.handleMessage(message("javadoc String.chars()")),
-              "${config.url()}/javadoc/JDK/java/lang/CharSequence.html#chars()")
+        scanForResponse(operation.handleMessage(message("~javadoc String.chars()")),
+                "${config.url()}/javadoc/JDK/1.8/index.html?java/lang/CharSequence.html#chars()")
     }
 
-    private fun addApi(apiName: String, downloadUrlString: String) {
-        val event = ApiEvent(testUser.nick, apiName, downloadUrlString)
+    private fun addApi(apiName: String, groupId: String, artifactId: String, version: String) {
+        val event = ApiEvent(testUser.nick, apiName, groupId, artifactId, version)
         eventDao.save(event)
         waitForEvent(event, "adding ${apiName}", Duration(5, TimeUnit.MINUTES))
         LOG.debug("done waiting for event to finish")

@@ -1,6 +1,5 @@
 package javabot.model
 
-import com.google.inject.Provider
 import javabot.JavabotConfig
 import javabot.dao.AdminDao
 import javabot.dao.ApiDao
@@ -12,11 +11,11 @@ import org.mongodb.morphia.annotations.Transient
 import java.io.File
 import java.io.FileOutputStream
 import java.io.StringWriter
-import java.net.MalformedURLException
 import java.net.URL
 import javax.inject.Inject
 
-@Entity("events") class ApiEvent : AdminEvent {
+@Entity("events")
+class ApiEvent : AdminEvent {
 
     companion object {
         fun locateJDK(): String {
@@ -32,11 +31,11 @@ import javax.inject.Inject
 
     lateinit var name: String
 
-    lateinit var downloadUrl: String
+    lateinit var groupId: String
 
-    @Inject
-    @Transient
-    lateinit var ircBot: Provider<PircBotX>
+    lateinit var artifactId: String
+
+    lateinit var version: String
 
     @Inject
     @Transient
@@ -57,18 +56,13 @@ import javax.inject.Inject
     constructor() {
     }
 
-    constructor(requestedBy: String, name: String, downloadUrl: String) : super(requestedBy, EventType.ADD) {
+    constructor(requestedBy: String, name: String, groupId: String, artifactId: String, version: String) :
+    super(requestedBy, EventType.ADD) {
         this.requestedBy = requestedBy
         this.name = name
-        if (name == "JDK") {
-            try {
-                this.downloadUrl = locateJDK()
-            } catch (e: MalformedURLException) {
-                throw IllegalArgumentException(e.message, e)
-            }
-        } else {
-            this.downloadUrl = downloadUrl
-        }
+        this.groupId = groupId.replace(".", "/")
+        this.artifactId = artifactId
+        this.version = version
     }
 
     constructor(requestedBy: String, type: EventType, apiId: ObjectId?) : super(requestedBy, type) {
@@ -95,39 +89,45 @@ import javax.inject.Inject
     }
 
     override fun add() {
-        val api = JavadocApi(name, config.url() + "/javadoc/", downloadUrl)
-        apiDao.save(api)
+        val api = JavadocApi(name, "${config.url()}", groupId, artifactId, version)
         process(api)
+        apiDao.save(api)
     }
 
     override fun reload() {
         val api = apiDao.find(apiId)
         if (api != null) {
+            name = api.name
+            groupId = api.groupId
+            artifactId = api.artifactId
+            version = if (name == "JDK" ) System.getProperty("java.version") else  api.version
             apiDao.delete(apiId)
             api.id = ObjectId()
-            apiDao.save(api)
             process(api)
+            apiDao.save(api)
         }
     }
 
     private fun process(api: JavadocApi) {
-        val user = JavabotUser(requestedBy)
-        val admin = adminDao.getAdmin(user)
+        val downloadUrl = if (name == "JDK") locateJDK() else buildMavenUrl()
+        val admin = adminDao.getAdmin(JavabotUser(requestedBy, requestedBy, ""))
         if (admin != null) {
-            val file = api.downloadUrl.downloadZip(api.name + ".jar", api.downloadUrl)
-            parser.parse(api, file.absolutePath, object : StringWriter() {
-                override fun write(line: String) {
-                    bot.privateMessageUser(user, line)
-                }
-            })
-        }
+            val user = JavabotUser(admin.ircName, admin.emailAddress, admin.hostName)
 
+            parser.parse(api, downloadUrl.downloadZip(File("/tmp/${api.name}.jar")),
+                    object : StringWriter() {
+                        override fun write(line: String) = bot.privateMessageUser(user, line)
+                    })
+        }
+    }
+
+    private fun buildMavenUrl(): String {
+        return "https://repo1.maven.org/maven2/${groupId}/${artifactId}/${version}/${artifactId}-${version}-sources.jar"
     }
 
     override fun toString(): String {
         return "ApiEvent{name='${name}', state=${state}, completed=${completed}, type=${type}}"
     }
-
 }
 
 fun String.downloadZip(file: File): File {
