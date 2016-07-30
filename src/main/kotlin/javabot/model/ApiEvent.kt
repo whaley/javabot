@@ -11,7 +11,10 @@ import org.mongodb.morphia.annotations.Transient
 import java.io.File
 import java.io.FileOutputStream
 import java.io.StringWriter
+import java.net.URI
 import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.inject.Inject
 
 @Entity("events")
@@ -84,6 +87,12 @@ class ApiEvent : AdminEvent {
             api = apiDao.find(name)
         }
         if (api != null) {
+            val host = config.databaseHost()
+            val port = config.databasePort()
+            val database = config.databaseName()
+            val uri = URI("gridfs://$host:$port/$database.javadoc/${api.name}/")
+
+            Files.delete(Paths.get(uri))
             apiDao.delete(api)
         }
     }
@@ -101,9 +110,9 @@ class ApiEvent : AdminEvent {
             groupId = api.groupId
             artifactId = api.artifactId
             version = if (name == "JDK" ) System.getProperty("java.version") else  api.version
-            apiDao.delete(apiId)
-            api.id = ObjectId()
-            apiDao.save(api)
+//            apiDao.delete(apiId)
+//            api.id = ObjectId()
+//            apiDao.save(api)
             process(api)
         }
     }

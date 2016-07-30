@@ -22,6 +22,7 @@ import java.util.Collections
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.jar.JarFile
 import javax.inject.Inject
 import javax.inject.Provider
@@ -34,16 +35,10 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
 
     fun parse(api: JavadocApi, location: File, writer: Writer) {
         try {
-            val tmpDir = File(".tmp")
-            if (!tmpDir.exists()) {
-                File(System.getProperty("java.io.tmpdir"))
-            }
-
             val workQueue = LinkedBlockingQueue<Runnable>()
-            val executor = ThreadPoolExecutor(20, 30, 30, TimeUnit.SECONDS, workQueue,
-                    JavabotThreadFactory(false, "javadoc-thread-"))
+            val executor = ThreadPoolExecutor(20, 30, 30, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
             executor.prestartCoreThread()
-            val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf("com", "net", "org")
+            val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
             try {
                 JarFile(location).use { jarFile ->
@@ -112,10 +107,15 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val byteArrayOutputStream = ByteArrayOutputStream()
         val printStream = PrintStream(byteArrayOutputStream)
         try {
-            extractJar(jar, jarTarget, packages)
+            extractJar(jar, jarTarget)
+            val packageNames = if (!packages.isEmpty())
+                packages
+            else jarTarget
+                    .listFiles { it -> it.isDirectory && it.name != "META-INF" }
+                    .map { it.name }
             ToolProvider.getSystemDocumentationTool().run(null, printStream, printStream,
                     "-d", javadocDir.absolutePath,
-                    "-subpackages", packages.joinToString(":"),
+                    "-subpackages", packageNames.joinToString(":"),
                     "-protected",
                     "-use",
                     "-sourcepath", jarTarget.absolutePath);
@@ -128,10 +128,10 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         return javadocDir
     }
 
-    private fun extractJar(jar: File, jarTarget: File, packages: List<String>) {
+    private fun extractJar(jar: File, jarTarget: File) {
         val jarFile = JarFile(jar)
         jarFile.entries().iterator().forEach { entry ->
-            if (entry.name.endsWith(".java") && (packages.isEmpty() || packages.any { entry.name.startsWith(it) })) {
+            if (!entry.isDirectory) {
                 val javaFile = File(jarTarget, entry.name)
                 javaFile.parentFile.mkdirs()
                 FileOutputStream(javaFile).use {

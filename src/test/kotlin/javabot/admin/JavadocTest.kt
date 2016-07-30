@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory
 import org.testng.Assert
 import org.testng.annotations.Test
 import java.io.File
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -36,7 +39,7 @@ class JavadocTest : BaseTest() {
     fun servlets() {
         val apiName = "Servlet"
         dropApi(apiName)
-        addApi(apiName, "javax/servlet", "javax.servlet-api", "3.0.1")
+        addApi(apiName, "javax.servlet", "javax.servlet-api", "3.0.1")
         checkServlets(apiName)
     }
 
@@ -50,6 +53,22 @@ class JavadocTest : BaseTest() {
         checkServlets(apiName)
     }
 
+    @Test
+    fun deleteJavadoc() {
+        val apiName = "Servlet-html"
+        dropApi(apiName)
+        addApi(apiName, "javax.servlet", "javax.servlet-api", "3.0.1")
+
+        val host = config.databaseHost()
+        val port = config.databasePort()
+        val database = config.databaseName()
+        val uri = URI("gridfs://$host:$port/$database.javadoc/Servlet-html/javax/servlet/http/HttpServlet.html")
+        Assert.assertTrue(Files.exists(Paths.get(uri)))
+
+        dropApi(apiName)
+        Assert.assertFalse(Files.exists(Paths.get(uri)))
+    }
+
     private fun checkServlets(apiName: String) {
         val api = apiDao.find(apiName)
         Assert.assertNotNull(javadocClassDao.getClass(api, "javax.servlet.http", "HttpServletRequest"),
@@ -60,9 +79,18 @@ class JavadocTest : BaseTest() {
         scanForResponse(operation.handleMessage(message("~javadoc HttpServletRequest")), "javax/servlet/http/HttpServletRequest.html")
         scanForResponse(operation.handleMessage(message("~javadoc HttpServletRequest.getMethod()")),
                 "javax/servlet/http/HttpServletRequest.html#getMethod")
+        checkServletFile(true)
     }
 
-    @Test //(dependsOnMethods = arrayOf("servlets"))
+    private fun checkServletFile(result: Boolean) {
+        val host = config.databaseHost()
+        val port = config.databasePort()
+        val database = config.databaseName()
+        val uri = URI("gridfs://$host:$port/$database.javadoc/Servlet/javax/servlet/http/HttpServlet.html")
+        Assert.assertEquals(Files.exists(Paths.get(uri)), result)
+    }
+
+    @Test(enabled = false)
     fun javaee() {
         val apiName = "JavaEE7"
         dropApi(apiName)
