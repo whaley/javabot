@@ -149,7 +149,7 @@ class JavadocClassParser @Inject constructor(var javadocClassDao: JavadocClassDa
         val origin = arg.getOrigin() as JavaSource
         var value:  String
         if(origin.getImport(arg.getType().getSimpleName()) != null) {
-            value = arg.getType().getQualifiedName();
+            value = arg.getType().getQualifiedName()
         } else {
             value = if (arg.getType().getQualifiedName().startsWith("java.lang"))
                 arg.getType().getQualifiedName()

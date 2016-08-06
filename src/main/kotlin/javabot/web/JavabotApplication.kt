@@ -98,7 +98,7 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
             if(!filePath.startsWith("/")) {
                 filePath = "/" + filePath
             }
-            val path = Paths.get(URI("$gridfs$filePath"));
+            val path = Paths.get(URI("$gridfs$filePath"))
 
             if (Files.exists(path)) {
                 response.outputStream.use { stream ->
@@ -108,7 +108,7 @@ class JavabotApplication @Inject constructor(var injector: Injector): Applicatio
             } else {
                 (response as HttpServletResponse).sendError(404)
             }
-            chain.doFilter(request, response);
+            chain.doFilter(request, response)
         }
 
         override fun init(filterConfig: FilterConfig?) {

@@ -90,9 +90,8 @@ class ApiEvent : AdminEvent {
             val host = config.databaseHost()
             val port = config.databasePort()
             val database = config.databaseName()
-            val uri = URI("gridfs://$host:$port/$database.javadoc/${api.name}/")
 
-            Files.delete(Paths.get(uri))
+            Files.delete(Paths.get(URI("gridfs://$host:$port/$database.javadoc/${api.name}/")))
             apiDao.delete(api)
         }
     }

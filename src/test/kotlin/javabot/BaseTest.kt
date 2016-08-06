@@ -36,9 +36,12 @@ open class BaseTest {
         val TEST_USER_NICK: String = "botuser"
         val TEST_BOT_NICK: String = "testjavabot"
         val BOT_EMAIL: String = "test@example.com"
+        val DONE: EnumSet<State> = EnumSet.of(State.COMPLETED, State.FAILED)
+        val OK: String = "OK, " + TEST_USER_NICK.substring(0, Math.min(TEST_USER_NICK.length, 16)) + "."
+        val TARGET_USER = JavabotUser(TEST_TARGET_NICK, TEST_TARGET_NICK, "hostmask")
+        val TEST_USER = JavabotUser(TEST_USER_NICK, TEST_USER_NICK, "hostmask")
+        val TEST_CHANNEL = Channel("#jbunittest")
     }
-
-    var done: EnumSet<State> = EnumSet.of(State.COMPLETED, State.FAILED)
 
     @Inject
     protected lateinit var datastore: Datastore
@@ -64,29 +67,22 @@ open class BaseTest {
     @Inject
     protected lateinit var messages: Messages
 
-    val ok: String = "OK, " + TEST_USER_NICK.substring(0, Math.min(TEST_USER_NICK.length, 16)) + "."
-
-    val targetUser = JavabotUser(TEST_TARGET_NICK, TEST_TARGET_NICK, "hostmask")
-
-    val testUser = JavabotUser(TEST_USER_NICK, TEST_USER_NICK, "hostmask")
-
-    val testChannel = Channel("#jbunittest")
 
     @BeforeTest
     fun setup() {
         messages.clear()
-        val admin = adminDao.getAdminByEmailAddress(BOT_EMAIL) ?: Admin(testUser.nick, BOT_EMAIL, testUser.hostmask, true)
-        admin.ircName = testUser.nick
+        val admin = adminDao.getAdminByEmailAddress(BOT_EMAIL) ?: Admin(TEST_USER.nick, BOT_EMAIL, TEST_USER.hostmask, true)
+        admin.ircName = TEST_USER.nick
         admin.emailAddress = BOT_EMAIL
-        admin.hostName = testUser.hostmask
+        admin.hostName = TEST_USER.hostmask
         admin.botOwner = true
 
         adminDao.save(admin)
 
-        var channel: Channel? = channelDao.get(testChannel.name)
+        var channel: Channel? = channelDao.get(TEST_CHANNEL.name)
         if (channel == null) {
             channel = Channel()
-            channel.name = testChannel.name
+            channel.name = TEST_CHANNEL.name
             channel.logged = true
             channelDao.save(channel)
         }
@@ -120,14 +116,15 @@ open class BaseTest {
     protected fun waitForEvent(event: AdminEvent, alias: String, timeout: Duration) {
         Awaitility.await(alias)
               .atMost(timeout)
-              .pollInterval(5, TimeUnit.SECONDS)
+              .pollInterval(10, TimeUnit.SECONDS)
               .until<Boolean> {
-                  done.contains(eventDao.find(event.id)?.state)
+                  val found = eventDao.find(event.id)
+                  DONE.contains(found?.state)
               }
     }
 
-    protected fun message(value: String, start: String = "~", user: JavabotUser = testUser): Message {
-        return Message.extractContentFromMessage(testChannel, user, start, value)
+    protected fun message(value: String, start: String = "~", user: JavabotUser = TEST_USER): Message {
+        return Message.extractContentFromMessage(TEST_CHANNEL, user, start, value)
     }
 
     protected fun scanForResponse(messages: List<Message>, target: String) {

@@ -48,7 +48,7 @@ abstract class MainView(var adminDao: AdminDao, var channelDao: ChannelDao, var 
         val cookie = getSessionCookie()
         if (cookie != null) {
             val user = INSTANCE.getBySessionToken(cookie.value)
-            return user != null && adminDao.getAdminByEmailAddress(user.email!!) != null
+            return user != null && adminDao.getAdminByEmailAddress(user.email) != null
         } else {
             return false
         }

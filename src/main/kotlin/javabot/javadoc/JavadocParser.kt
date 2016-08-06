@@ -1,5 +1,6 @@
 package javabot.javadoc
 
+import com.jayway.awaitility.Awaitility
 import javabot.JavabotConfig
 import javabot.JavabotThreadFactory
 import javabot.dao.ApiDao
@@ -7,11 +8,12 @@ import javabot.dao.JavadocClassDao
 import org.bson.types.ObjectId
 import org.jboss.forge.roaster.Roaster
 import org.slf4j.LoggerFactory
+import org.zeroturnaround.exec.stream.slf4j.Level.INFO
+import org.zeroturnaround.exec.stream.slf4j.Slf4jStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.PrintStream
 import java.io.Writer
 import java.net.URI
 import java.nio.charset.Charset
@@ -22,21 +24,21 @@ import java.util.Collections
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.SECONDS
 import java.util.jar.JarFile
 import javax.inject.Inject
 import javax.inject.Provider
-import javax.inject.Singleton
 import javax.tools.ToolProvider
 
-@Singleton
 class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao: JavadocClassDao,
                                         val provider: Provider<JavadocClassParser>, val config: JavabotConfig) {
 
+    val workQueue = LinkedBlockingQueue<Runnable>()
+    val executor = ThreadPoolExecutor(20, 30, 30, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
+
     fun parse(api: JavadocApi, location: File, writer: Writer) {
         try {
-            val workQueue = LinkedBlockingQueue<Runnable>()
-            val executor = ThreadPoolExecutor(20, 30, 30, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
             executor.prestartCoreThread()
             val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
@@ -51,13 +53,19 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                 }
                             }
                 }
-                while (!workQueue.isEmpty()) {
-                    writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
-                    Thread.sleep(5000)
-                }
+
+                Awaitility
+                    .waitAtMost(30, MINUTES)
+                    .pollInterval(5, SECONDS)
+                    .until<Boolean> {
+                        writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
+                        workQueue.isEmpty()
+                    }
                 buildHtml(api, location, packages)
+
                 executor.shutdown()
-                executor.awaitTermination(1, TimeUnit.HOURS)
+                executor.awaitTermination(10, TimeUnit.MINUTES)
+
             } finally {
                 location.delete()
             }
@@ -86,7 +94,12 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                     .forEach {
                         val source = Paths.get(it.absolutePath)
                         val target = targetDir.resolve(javadocPath.relativize(source).toString())
-                        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
+                        val move = Runnable { Files.move(source, target, StandardCopyOption.REPLACE_EXISTING) }
+                        if (!workQueue.offer(move, 1, TimeUnit.MINUTES)) {
+                            log.warn("Failed to queue file move")
+                            move.run()
+                        }
+
                     }
         } finally {
             javadocDir.deleteRecursively()
@@ -105,7 +118,9 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         javadocDir.mkdirs()
 
         val byteArrayOutputStream = ByteArrayOutputStream()
-        val printStream = PrintStream(byteArrayOutputStream)
+//        val printStream = PrintStream(byteArrayOutputStream)
+
+        val printStream = Slf4jStream.of(log).`as`(INFO)
         try {
             extractJar(jar, jarTarget)
             val packageNames = if (!packages.isEmpty())
@@ -113,12 +128,17 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             else jarTarget
                     .listFiles { it -> it.isDirectory && it.name != "META-INF" }
                     .map { it.name }
-            ToolProvider.getSystemDocumentationTool().run(null, printStream, printStream,
-                    "-d", javadocDir.absolutePath,
-                    "-subpackages", packageNames.joinToString(":"),
-                    "-protected",
-                    "-use",
-                    "-sourcepath", jarTarget.absolutePath);
+            Awaitility
+                .await()
+                .atMost(30, MINUTES)
+                .until {
+                    ToolProvider.getSystemDocumentationTool().run(null, printStream, printStream,
+                            "-d", javadocDir.absolutePath,
+                            "-subpackages", packageNames.joinToString(":"),
+                            "-protected",
+                            "-use",
+                            "-sourcepath", jarTarget.absolutePath)
+                }
         } catch (e : Exception) {
             log.error(e.message, e)
             log.error(byteArrayOutputStream.toString("UTF-8"))

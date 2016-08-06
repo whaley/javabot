@@ -25,7 +25,7 @@ class JavadocOperation @Inject constructor(bot: Javabot, adminDao: AdminDao, var
             if (field == null) {
                 field = if (config.bitlyToken() != "") BitlyClient(config.bitlyToken()) else null
             }
-            return field;
+            return field
         }
 
     override fun handleMessage(event: Message): List<Message> {

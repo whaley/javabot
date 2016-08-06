@@ -35,19 +35,6 @@ constructor(var messages: Messages, nickServDao: NickServDao, logsDao: LogsDao, 
         messages.add(value)
     }
 
-    override
-    fun startBot() {
-    }
-
-    override
-    fun isConnected(): Boolean {
-        return true
-    }
-
-    override fun isBotOnChannel(name: String): Boolean {
-        return true
-    }
-
     override fun send(user: JavabotUser, value: String) {
         messages.add(value)
     }

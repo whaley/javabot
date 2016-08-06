@@ -46,7 +46,7 @@ class JavadocTest : BaseTest() {
     @Test(dependsOnMethods = arrayOf("servlets"))
     fun reloadServlets() {
         val apiName = "Servlet"
-        val event = ApiEvent(testUser.nick, EventType.RELOAD, apiDao.find(apiName)?.id)
+        val event = ApiEvent(TEST_USER.nick, EventType.RELOAD, apiDao.find(apiName)?.id)
         eventDao.save(event)
         waitForEvent(event, "reloading " + apiName, Duration(30, TimeUnit.MINUTES))
         messages.clear()
@@ -122,7 +122,7 @@ class JavadocTest : BaseTest() {
         }
         var api: JavadocApi? = apiDao.find("JDK")
         if (api == null) {
-            val event = ApiEvent(testUser.nick, "JDK", "", "", "")
+            val event = ApiEvent(TEST_USER.nick, "JDK", "", "", "")
             eventDao.save(event)
             waitForEvent(event, "adding JDK", Duration(30, TimeUnit.MINUTES))
             messages.clear()
@@ -135,7 +135,7 @@ class JavadocTest : BaseTest() {
     }
 
     private fun addApi(apiName: String, groupId: String, artifactId: String, version: String) {
-        val event = ApiEvent(testUser.nick, apiName, groupId, artifactId, version)
+        val event = ApiEvent(TEST_USER.nick, apiName, groupId, artifactId, version)
         eventDao.save(event)
         waitForEvent(event, "adding ${apiName}", Duration(5, TimeUnit.MINUTES))
         LOG.debug("done waiting for event to finish")
@@ -143,7 +143,7 @@ class JavadocTest : BaseTest() {
     }
 
     private fun dropApi(apiName: String) {
-        eventDao.save(ApiEvent(testUser.nick, EventType.DELETE, apiName))
+        eventDao.save(ApiEvent(TEST_USER.nick, EventType.DELETE, apiName))
         Awaitility.await()
                 .atMost(60, TimeUnit.SECONDS)
                 .until<Boolean> { apiDao.find(apiName) == null }
