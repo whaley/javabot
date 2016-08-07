@@ -43,6 +43,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
             try {
+                println("Starting class processing")
                 JarFile(location).use { jarFile ->
                     Collections.list(jarFile.entries())
                             .filter { it.name.endsWith(".java") && (packages.isEmpty() || packages.any { pkg -> it.name.startsWith(pkg) }) }
@@ -53,7 +54,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                 }
                             }
                 }
-
+                
+                println("Waiting for queue to drain")
                 Awaitility
                     .waitAtMost(30, MINUTES)
                     .pollInterval(5, SECONDS)
@@ -89,6 +91,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val javadocDir = buildJavadocHtml(packages, file)
         val javadocPath = javadocDir.toPath()
         try {
+            println("moving html to gridfs")
             javadocDir.walk()
                     .filter { !it.isDirectory }
                     .forEach {
@@ -97,6 +100,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                         Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
                     }
         } finally {
+            println("done moving html to gridfs")
             javadocDir.deleteRecursively()
         }
     }
