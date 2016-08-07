@@ -35,7 +35,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                         val provider: Provider<JavadocClassParser>, val config: JavabotConfig) {
 
     val workQueue = LinkedBlockingQueue<Runnable>()
-    val executor = ThreadPoolExecutor(20, 30, 30, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
+    val executor = ThreadPoolExecutor(10, 20, 10, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
 
     fun parse(api: JavadocApi, location: File, writer: Writer) {
         try {
@@ -48,7 +48,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                             .filter { it.name.endsWith(".java") && (packages.isEmpty() || packages.any { pkg -> it.name.startsWith(pkg) }) }
                             .map { jarFile.getInputStream(it).readBytes().toString(Charset.forName("UTF-8")) }
                             .forEach { text ->
-                                if (!workQueue.offer(JavadocClassReader(api, text), 1, TimeUnit.MINUTES)) {
+                                if (!workQueue.offer(JavadocClassReader(api, text), 3, TimeUnit.MINUTES)) {
                                     writer.write("Failed to queue class")
                                 }
                             }
