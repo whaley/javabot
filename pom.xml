@@ -205,8 +205,8 @@
 
         <dependency>
             <groupId>com.antwerkz.gridfs</groupId>
-            <artifactId>gridfs-core</artifactId>
-            <version>0.3-SNAPSHOT</version>
+            <artifactId>gridfs-provider</artifactId>
+            <version>${gridfs.version}</version>
         </dependency>
 
         <dependency>
@@ -456,5 +456,6 @@
         <jacoco.version>0.7.7.201606060606</jacoco.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <gridfs.version>0.3</gridfs.version>
     </properties>
 </project>
