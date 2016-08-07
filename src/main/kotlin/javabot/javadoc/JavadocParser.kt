@@ -94,12 +94,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                     .forEach {
                         val source = Paths.get(it.absolutePath)
                         val target = targetDir.resolve(javadocPath.relativize(source).toString())
-                        val move = Runnable { Files.move(source, target, StandardCopyOption.REPLACE_EXISTING) }
-                        if (!workQueue.offer(move, 1, TimeUnit.MINUTES)) {
-                            log.warn("Failed to queue file move")
-                            move.run()
-                        }
-
+                        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
                     }
         } finally {
             javadocDir.deleteRecursively()
