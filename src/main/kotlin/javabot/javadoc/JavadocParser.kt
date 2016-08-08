@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.PrintStream
 import java.io.Writer
 import java.net.URI
 import java.nio.charset.Charset
@@ -34,11 +35,11 @@ import javax.tools.ToolProvider
 class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao: JavadocClassDao,
                                         val provider: Provider<JavadocClassParser>, val config: JavabotConfig) {
 
-    val workQueue = LinkedBlockingQueue<Runnable>()
-    val executor = ThreadPoolExecutor(10, 20, 10, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
 
     fun parse(api: JavadocApi, location: File, writer: Writer) {
         try {
+            val workQueue = LinkedBlockingQueue<Runnable>()
+            val executor = ThreadPoolExecutor(10, 20, 10, SECONDS, workQueue, JavabotThreadFactory(false, "javadoc-thread-"))
             executor.prestartCoreThread()
             val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
@@ -55,6 +56,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                             }
                 }
                 
+                buildHtml(api, location, packages)
+
                 println("Waiting for queue to drain")
                 Awaitility
                     .waitAtMost(30, MINUTES)
@@ -63,8 +66,6 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                         writer.write("Waiting on %s work queue to drain.  %d items left".format(api.name, workQueue.size))
                         workQueue.isEmpty()
                     }
-                buildHtml(api, location, packages)
-
                 executor.shutdown()
                 executor.awaitTermination(10, TimeUnit.MINUTES)
 
@@ -92,15 +93,31 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val javadocPath = javadocDir.toPath()
         try {
             println("moving html to gridfs")
-            javadocDir.walk()
+            val iterator = javadocDir.walk()
                     .filter { !it.isDirectory }
-                    .forEach {
-                        val source = Paths.get(it.absolutePath)
-                        val target = targetDir.resolve(javadocPath.relativize(source).toString())
-                        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
+                    .map {
+                        Paths.get(it.absolutePath) to
+                                targetDir.resolve(javadocPath.relativize(Paths.get(it.absolutePath)).toString())
                     }
-        } finally {
+                    .iterator()
+            Awaitility
+                    .await()
+                    .pollInterval(5, SECONDS)
+                    .atMost(30, MINUTES)
+                    .until<Boolean> {
+                        (1..100).forEach {
+                            if (iterator.hasNext()) {
+                                val (first, second) = iterator.next()
+                                Files.move(first, second, StandardCopyOption.REPLACE_EXISTING)
+                            }
+                        }
+                        !iterator.hasNext()
+                    }
             println("done moving html to gridfs")
+        } catch(e: Exception) {
+            e.printStackTrace()
+        } finally {
+            println("removing javadoc directory")
             javadocDir.deleteRecursively()
         }
     }
@@ -117,9 +134,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         javadocDir.mkdirs()
 
         val byteArrayOutputStream = ByteArrayOutputStream()
-//        val printStream = PrintStream(byteArrayOutputStream)
-
-        val printStream = Slf4jStream.of(log).`as`(INFO)
+        val printStream = PrintStream(byteArrayOutputStream)
+//        val printStream = Slf4jStream.of(log).`as`(INFO)
         try {
             extractJar(jar, jarTarget)
             val packageNames = if (!packages.isEmpty())
@@ -136,6 +152,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                             "-subpackages", packageNames.joinToString(":"),
                             "-protected",
                             "-use",
+                            "-quiet",
                             "-sourcepath", jarTarget.absolutePath)
                 }
         } catch (e : Exception) {
