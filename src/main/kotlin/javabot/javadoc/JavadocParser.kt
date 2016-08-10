@@ -56,7 +56,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                             }
                 }
 
-//                buildHtml(api, location, packages)
+                buildHtml(api, location, packages)
+
                 println("Waiting for queue to drain")
                 Awaitility
                     .waitAtMost(30, MINUTES)
