@@ -44,6 +44,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
             try {
+/*
                 println("Starting class processing")
                 JarFile(location).use { jarFile ->
                     Collections.list(jarFile.entries())
@@ -55,7 +56,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                 }
                             }
                 }
-                
+*/
+
                 buildHtml(api, location, packages)
 
                 println("Waiting for queue to drain")
@@ -93,26 +95,14 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
         val javadocPath = javadocDir.toPath()
         try {
             println("moving html to gridfs")
-            val iterator = javadocDir.walk()
+            javadocDir.walk()
                     .filter { !it.isDirectory }
-                    .map {
-                        Paths.get(it.absolutePath) to
-                                targetDir.resolve(javadocPath.relativize(Paths.get(it.absolutePath)).toString())
+                    .forEach {
+                        val first = Paths.get(it.absolutePath)
+                        val second = targetDir.resolve(javadocPath.relativize(first).toString())
+                        Files.move(first, second, StandardCopyOption.REPLACE_EXISTING)
                     }
-                    .iterator()
-            Awaitility
-                    .await()
-                    .pollInterval(5, SECONDS)
-                    .atMost(30, MINUTES)
-                    .until<Boolean> {
-                        (1..100).forEach {
-                            if (iterator.hasNext()) {
-                                val (first, second) = iterator.next()
-                                Files.move(first, second, StandardCopyOption.REPLACE_EXISTING)
-                            }
-                        }
-                        !iterator.hasNext()
-                    }
+
             println("done moving html to gridfs")
         } catch(e: Exception) {
             e.printStackTrace()
@@ -143,6 +133,7 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             else jarTarget
                     .listFiles { it -> it.isDirectory && it.name != "META-INF" }
                     .map { it.name }
+            println("Building javadoc")
             Awaitility
                 .await()
                 .atMost(30, MINUTES)
