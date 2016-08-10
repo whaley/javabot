@@ -44,7 +44,6 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
             val packages = if ("JDK" == api.name) listOf("java", "javax") else listOf()
 
             try {
-/*
                 println("Starting class processing")
                 JarFile(location).use { jarFile ->
                     Collections.list(jarFile.entries())
@@ -56,9 +55,8 @@ class JavadocParser @Inject constructor(val apiDao: ApiDao, val javadocClassDao:
                                 }
                             }
                 }
-*/
 
-                buildHtml(api, location, packages)
+//                buildHtml(api, location, packages)
 
                 println("Waiting for queue to drain")
                 Awaitility
