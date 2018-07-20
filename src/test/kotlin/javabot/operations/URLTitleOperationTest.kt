@@ -3,17 +3,64 @@ package javabot.operations
 import javabot.BaseTest
 import javabot.Message
 import javabot.operations.urlcontent.URLContentAnalyzer
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
 import org.testng.Assert
 import org.testng.Assert.assertEquals
+import org.testng.annotations.AfterClass
+import org.testng.annotations.BeforeClass
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import javax.inject.Inject
+import org.eclipse.jetty.servlet.ServletHandler
+import javax.servlet.Servlet
+import javax.servlet.http.HttpServlet
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+
 
 @Test(groups = arrayOf("operations"))
 class URLTitleOperationTest : BaseTest() {
     @Inject
     private lateinit var operation: URLTitleOperation
     private val analyzer = URLContentAnalyzer()
+    private var server: Server = Server(0) //0 causes Jetty to pick a random port
+    private var port = Int.MIN_VALUE
+
+    @BeforeClass
+    fun startHttpServer() {
+        //Start jetty on a randomly available port
+        val handler = ServletHandler()
+        server.handler = handler
+        handler.addServletWithMapping(ServerHtmlWithTitles::class.java, "/*");
+
+        val connector = server.connectors[0]
+        if (connector is ServerConnector) {
+            port = connector.port
+        } else {
+            throw Exception("Unable to start embedded jetty")
+        }
+        server.start()
+        println("Port $port")
+
+    }
+
+    @AfterClass
+    fun stopHttpServer() {
+        if (server.isStarted) {
+            server.stop()
+        }
+    }
+
+    inner class ServerHtmlWithTitles : HttpServlet() {
+        val urlsAndTitles = this@URLTitleOperationTest.getUrls()
+        override fun doGet(req: HttpServletRequest, res: HttpServletResponse) {
+            res.contentType = "text/html"
+            res.writer.print("test foo")
+            res.writer.flush()
+        }
+    }
+
 
     @Test(dataProvider = "urls")
     fun testSimpleUrl(url: String, content: String?) {
@@ -23,11 +70,6 @@ class URLTitleOperationTest : BaseTest() {
         } else {
             Assert.assertTrue(results.isEmpty(), "Results for '${url}' should be empty: ${results}")
         }
-    }
-
-    @Test(dataProvider = "urlRulesCheck")
-    fun testFuzzyContent(url: String, title: String?, pass: Boolean) {
-        assertEquals(analyzer.check(url, title), pass)
     }
 
     @DataProvider(name = "urls")
@@ -64,6 +106,11 @@ class URLTitleOperationTest : BaseTest() {
         )
     }
 
+    @Test(dataProvider = "urlRulesCheck")
+    fun testFuzzyContent(url: String, title: String?, pass: Boolean) {
+        assertEquals(analyzer.check(url, title), pass)
+    }
+
     @DataProvider(name = "urlRulesCheck")
     fun getUrlsForRulesCheck(): Array<Array<*>> {
         return arrayOf(arrayOf("http://pastebin.com", "pastebin for your wastebin", false),
@@ -75,4 +122,6 @@ class URLTitleOperationTest : BaseTest() {
                 arrayOf("http://foo.bar.com", null, false))
     }
 
+
 }
+
