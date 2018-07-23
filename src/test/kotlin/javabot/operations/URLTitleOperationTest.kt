@@ -13,7 +13,6 @@ import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
-import java.io.PrintWriter
 import javax.inject.Inject
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -29,7 +28,7 @@ class URLTitleOperationTest : BaseTest() {
     @BeforeClass
     fun startEmbeddedJetty() {
         val server = Server(9999)
-        server.handler = HandlerForTitleTests()
+        server.handler = HandlerForTitleTests(mapOf(("/foobar" to "vegan food")))
         server.start()
         server.dumpStdErr()
     }
@@ -39,27 +38,26 @@ class URLTitleOperationTest : BaseTest() {
         server?.stop()
     }
 
-    class HandlerForTitleTests : AbstractHandler() {
+    class HandlerForTitleTests(val pathsToTitles: Map<String,String>) : AbstractHandler() {
         override fun handle(target: String, baseRequest: Request, request: HttpServletRequest, response: HttpServletResponse) {
             response.contentType = "text/html; charset=utf-8"
             response.status = HttpServletResponse.SC_OK
 
             val out = response.writer
-            out.println("<title>title of record</title>");
+            val title = pathsToTitles.getOrDefault(request.pathInfo, "Request was to a path we aren't testing for, you insolent clod")
+            out.println("<title>$title</title>")
             baseRequest.isHandled = true
         }
     }
-
-
+    
     @Test
     fun testEmbeddedJetty() {
         val document = Jsoup
-                .connect("http://localhost:9999/foo")
+                .connect("http://localhost:9999/foobar")
                 .userAgent("Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/41.0")
                 .timeout(5000)
                 .get()
-        var title = document.title()
-        Assert.assertEquals(title, "title of record")
+        Assert.assertEquals(document.title(), "vegan food")
 
     }
 
