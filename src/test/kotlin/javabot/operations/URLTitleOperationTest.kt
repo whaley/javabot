@@ -3,17 +3,65 @@ package javabot.operations
 import javabot.BaseTest
 import javabot.Message
 import javabot.operations.urlcontent.URLContentAnalyzer
+import org.eclipse.jetty.server.Request
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.handler.AbstractHandler
+import org.jsoup.Jsoup
 import org.testng.Assert
 import org.testng.Assert.assertEquals
+import org.testng.annotations.AfterClass
+import org.testng.annotations.BeforeClass
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
+import java.io.PrintWriter
 import javax.inject.Inject
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 @Test(groups = ["operations"])
 class URLTitleOperationTest : BaseTest() {
     @Inject
     private lateinit var operation: URLTitleOperation
     private val analyzer = URLContentAnalyzer()
+
+    private var server: Server? = null
+
+    @BeforeClass
+    fun startEmbeddedJetty() {
+        val server = Server(9999)
+        server.handler = HandlerForTitleTests()
+        server.start()
+        server.dumpStdErr()
+    }
+
+    @AfterClass
+    fun stopEmbeddedJetty() {
+        server?.stop()
+    }
+
+    class HandlerForTitleTests : AbstractHandler() {
+        override fun handle(target: String, baseRequest: Request, request: HttpServletRequest, response: HttpServletResponse) {
+            response.contentType = "text/html; charset=utf-8"
+            response.status = HttpServletResponse.SC_OK
+
+            val out = response.writer
+            out.println("<title>title of record</title>");
+            baseRequest.isHandled = true
+        }
+    }
+
+
+    @Test
+    fun testEmbeddedJetty() {
+        val document = Jsoup
+                .connect("http://localhost:9999/foo")
+                .userAgent("Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/41.0")
+                .timeout(5000)
+                .get()
+        var title = document.title()
+        Assert.assertEquals(title, "title of record")
+
+    }
 
     @Test(dataProvider = "urls")
     fun testSimpleUrl(url: String, content: String?) {
